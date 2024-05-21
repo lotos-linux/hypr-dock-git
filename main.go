@@ -1,18 +1,18 @@
 package main
 
 import (
-	// "fmt"
+	"fmt"
 	"strconv"
 	"github.com/dlasky/gotk3-layershell/layershell"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
-	// "github.com/BurntSushi/toml"
+	"github.com/BurntSushi/toml"
 )
 
 const version = "0.0.1"
 
 func main() {
-	// configReader()
+	configReader()
 
 	gtk.Init(nil)
 
@@ -83,14 +83,14 @@ func increment(label *gtk.Label, inc int) {
 	label.SetLabel(strconv.Itoa(labelNum + inc))
 }
 
-// func configReader() {
-// 	type Config struct {
-// 		x int
-// 		text string
-// 	}
+func configReader() {
+	type Config struct {
+		x int
+		text string
+	}
 
-// 	mainConf := "./configs/main.toml"
-// 	var config Config
-// 	data, _ := toml.DecodeFile(mainConf, &config)
-// 	fmt.Println(data)
-// }
+	mainConf := "./configs/main.toml"
+	var config Config
+	data, _ := toml.DecodeFile(mainConf, &config)
+	fmt.Println(data)
+}
