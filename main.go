@@ -1,15 +1,33 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"github.com/dlasky/gotk3-layershell/layershell"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/BurntSushi/toml"
 )
 
 const version = "0.0.1"
 
+func configReader() {
+	type Config struct {
+		x int
+		text string
+	}
+
+	mainConf := "./configs/main.toml"
+	var config Config
+	// meta, _ := toml.DecodeFile(mainConf, &config)
+	// fmt.Println(meta)
+	data, _ := toml.Decode(mainConf, &config)
+	fmt.Println(data)
+}
+
 func main() {
+	configReader()
+
 	gtk.Init(nil)
 
 	window, _ := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
