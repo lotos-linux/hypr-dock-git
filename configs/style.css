@@ -1,0 +1,20 @@
+window {
+  background-color: rgba(52, 52, 52, 0.410);
+  border-radius: 6px;
+}
+
+button {
+  background-color: transparent;
+  margin: 2px 0px;
+}
+
+#main-box {
+  padding: 5px;
+  margin: 2px 0px;
+}
+
+#number-box {
+  padding: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.198);
+  border-radius: 5px;
+}
