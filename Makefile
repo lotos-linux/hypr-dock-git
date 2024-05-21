@@ -9,10 +9,3 @@ run:
 
 exec:
 		./bin/inclayer-go
-
-push:
-		git add .
-		git status
-		read commit
-		git commit -m $commit
-		git remote | xargs -L1 git push --all
