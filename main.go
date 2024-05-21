@@ -16,7 +16,7 @@ func main() {
 	window.SetTitle("inclayer-go")
 
 	addLayerShell(window)
-	addCssProvider("/home/lotsmannc/repos/gotk/configs/style.css")
+	addCssProvider("./configs/style.css")
 
 
 	mainBox, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
