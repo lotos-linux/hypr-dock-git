@@ -19,9 +19,7 @@ func configReader() {
 
 	mainConf := "./configs/main.toml"
 	var config Config
-	// meta, _ := toml.DecodeFile(mainConf, &config)
-	// fmt.Println(meta)
-	data, _ := toml.Decode(mainConf, &config)
+	data, _ := toml.DecodeFile(mainConf, &config)
 	fmt.Println(data)
 }
 
