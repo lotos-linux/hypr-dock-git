@@ -75,7 +75,11 @@ func addCssProvider(cssFile string) {
 	}
 }
 
-func setWindowProperty(window *gtk.Window, layer string, position string, margin int) gtk.Orientation {
+func setWindowProperty(window *gtk.Window, 
+					   layer string, 
+					   position string, 
+					   margin int) gtk.Orientation {
+						
 	LAYER_SHELL_LAYER := layershell.LAYER_SHELL_LAYER_BOTTOM
 	LAYER_SHELL_EDGE := layershell.LAYER_SHELL_EDGE_LEFT
 	MAIN_BOX_ORIENTATION := gtk.ORIENTATION_VERTICAL
