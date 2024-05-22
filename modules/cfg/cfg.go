@@ -49,5 +49,6 @@ func ReadItemList(jsonFile string) ItemList {
 	if err != nil {
 	  fmt.Println("error:", err)
 	}
+	
 	return itemList
 }

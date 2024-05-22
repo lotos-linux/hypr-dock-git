@@ -6,13 +6,10 @@ window {
 button {
   background-color: transparent;
   margin: 2px 0px;
+  padding: 4px;
 }
 
-#main-box {
-  padding: 5px;
+#app {
+  padding: 6px;
   margin: 2px 0px;
-}
-
-#number-box {
-  padding: 5px;
 }

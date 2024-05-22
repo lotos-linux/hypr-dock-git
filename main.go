@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	// "strconv"
 	"hypr-dock/modules/cfg"
 	"github.com/dlasky/gotk3-layershell/layershell"
 	"github.com/gotk3/gotk3/gdk"
@@ -19,9 +18,10 @@ const ITEMS_CONFIG = CONFIG_DIR + "items.json"
 var config = cfg.ConnectConfig(MAIN_CONFIG)
 var itemList = cfg.ReadItemList(ITEMS_CONFIG)
 
-func main() {
-	fmt.Println("Start")
+var err error
+var app *gtk.Box
 
+func main() {
 	gtk.Init(nil)
 
 	window, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
@@ -30,25 +30,26 @@ func main() {
 	}
 
 	window.SetTitle("hypr-dock")
-	addCssProvider(THEMES_DIR + config.CurrentTheme + "/style.css")
+	orientation := setWindowProperty(window)
 
+	err = addCssProvider(THEMES_DIR + config.CurrentTheme + "/style.css")	 
+	if err != nil {
+		fmt.Println("CSS file not found, the default GTK theme is running!\n", err)
+		app, _ = gtk.BoxNew(orientation, 5)
+	} else {
+		app, _ = gtk.BoxNew(orientation, 0)
+		app.SetName("app")
+	}
 
-	orientation := setWindowProperty(window)			 
+	renderItems(app)
 
-
-	mainBox, _ := gtk.BoxNew(orientation, 0)
-	mainBox.SetName("main-box")
-	window.Add(mainBox)
-
-	renderItems(mainBox, window)
-
-
+	window.Add(app)
 	window.Connect("destroy", func() {gtk.MainQuit()})
 	window.ShowAll()
 	gtk.Main()
 }
 
-func renderItems(mainBox *gtk.Box, window *gtk.Window) {
+func renderItems(app *gtk.Box) {
 	iconTheme, err := gtk.IconThemeGetDefault()
 	if err != nil {
 		fmt.Println("Unable to icon theme:", err)
@@ -63,8 +64,6 @@ func renderItems(mainBox *gtk.Box, window *gtk.Window) {
 			return
 		}
 
-		fmt.Println(itemList.List[item]["title"])
-
 		btns := map[int]*gtk.Button{}
 		btns[item], _ = gtk.ButtonNew()
 
@@ -72,30 +71,28 @@ func renderItems(mainBox *gtk.Box, window *gtk.Window) {
 		imgs[item], _ = gtk.ImageNewFromPixbuf(pixbuf)
 		btns[item].SetImage(imgs[item])
 
-		// btns[item].Connect("clicked", func() {
-		// 	layershell.SetMargin(
-		// 		window, layershell.LAYER_SHELL_EDGE_LEFT, config.IconSize * -2)
-		// })
-
-		mainBox.Add(btns[item])
+		app.Add(btns[item])
 	}
 }
 
-func addCssProvider(cssFile string) {
+func addCssProvider(cssFile string) error {
 	cssProvider, _ := gtk.CssProviderNew()
 	err := cssProvider.LoadFromPath(cssFile)
 	if err == nil {
 		screen, _ := gdk.ScreenGetDefault()
 		gtk.AddProviderForScreen(
 			screen, cssProvider,gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+		return nil
+	} else {
+
+		return err
 	}
 }
 
 func setWindowProperty(window *gtk.Window) gtk.Orientation {
-
 	LAYER_SHELL_LAYER := layershell.LAYER_SHELL_LAYER_BOTTOM
 	LAYER_SHELL_EDGE := layershell.LAYER_SHELL_EDGE_LEFT
-	MAIN_BOX_ORIENTATION := gtk.ORIENTATION_VERTICAL
+	APP_ORIENTATION := gtk.ORIENTATION_VERTICAL
 
 
 	switch config.Layer {
@@ -114,12 +111,12 @@ func setWindowProperty(window *gtk.Window) gtk.Orientation {
 		LAYER_SHELL_EDGE = layershell.LAYER_SHELL_EDGE_LEFT
 	case "bottom":
 		LAYER_SHELL_EDGE = layershell.LAYER_SHELL_EDGE_BOTTOM
-		MAIN_BOX_ORIENTATION = gtk.ORIENTATION_HORIZONTAL
+		APP_ORIENTATION = gtk.ORIENTATION_HORIZONTAL
 	case "right":
 		LAYER_SHELL_EDGE = layershell.LAYER_SHELL_EDGE_RIGHT
 	case "top":
 		LAYER_SHELL_EDGE = layershell.LAYER_SHELL_EDGE_TOP
-		MAIN_BOX_ORIENTATION = gtk.ORIENTATION_HORIZONTAL
+		APP_ORIENTATION = gtk.ORIENTATION_HORIZONTAL
 	}
 
 	layershell.InitForWindow(window)
@@ -128,5 +125,5 @@ func setWindowProperty(window *gtk.Window) gtk.Orientation {
 	layershell.SetAnchor(window, LAYER_SHELL_EDGE, true)
 	layershell.SetMargin(window, LAYER_SHELL_EDGE, config.Margin)
 
-	return MAIN_BOX_ORIENTATION
+	return APP_ORIENTATION
 }
