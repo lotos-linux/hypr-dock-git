@@ -35,7 +35,7 @@ func ConnectConfig(jsoncFile string) Config {
 
 
 type ItemList struct {
-	ItemList		[]map[string]string
+	List			[]map[string]string
 }
 
 func ReadItemList(jsonFile string) ItemList {

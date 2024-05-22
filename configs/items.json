@@ -1,7 +1,19 @@
 {
-    "list": [
-        {"title": "Telegram Desktop", "class": "org.telegram.desktop"},
-        {"title": "Firefox Web Browser", "class": "firefox"},
-        {"title": "kitty", "class": "kitty"}
+    "List": [
+        {
+            "title": "Telegram Desktop",
+            "class": "org.telegram.desktop",
+            "icon": "telegram"
+        },
+        {
+            "title": "Firefox Web Browser",
+            "class": "firefox",
+            "icon": "firefox"
+        },
+        {
+            "title": "kitty",
+            "class": "kitty",
+            "icon": "kitty"
+        }
     ]
 }

@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"strconv"
+	// "strconv"
 	"hypr-dock/modules/cfg"
 	"github.com/dlasky/gotk3-layershell/layershell"
 	"github.com/gotk3/gotk3/gdk"
@@ -14,57 +14,71 @@ const version = "0.0.2alpha"
 const CONFIG_DIR = "./configs/"
 const THEMES_DIR = CONFIG_DIR + "themes/"
 const MAIN_CONFIG = CONFIG_DIR + "main.jsonc"
+const ITEMS_CONFIG = CONFIG_DIR + "items.json"
+
+var config = cfg.ConnectConfig(MAIN_CONFIG)
+var itemList = cfg.ReadItemList(ITEMS_CONFIG)
 
 func main() {
 	fmt.Println("Start")
-	config := cfg.ConnectConfig(MAIN_CONFIG)
 
 	gtk.Init(nil)
 
-	window, _ := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
-	window.SetTitle("hypr-dock")
+	window, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	if err != nil {
+		fmt.Println("Unable to create window:", err)
+	}
 
-	orientation := setWindowProperty(window, config.Layer, 
-	                                 config.Position, config.Margin)
-									 
+	window.SetTitle("hypr-dock")
 	addCssProvider(THEMES_DIR + config.CurrentTheme + "/style.css")
+
+
+	orientation := setWindowProperty(window)			 
 
 
 	mainBox, _ := gtk.BoxNew(orientation, 0)
 	mainBox.SetName("main-box")
 	window.Add(mainBox)
-	
 
-	iconTheme, _ := gtk.IconThemeGetDefault()
-	pixbuf, _ := iconTheme.LoadIcon(
-		"system-file-manager", config.IconSize, gtk.ICON_LOOKUP_FORCE_SIZE)
-
-
-	label, _ := gtk.LabelNew("0")
-	label.SetName("number-box")
-
-	
-	for number := range 6 {
-		btns := map[int]*gtk.Button{}
-		btns[number], _ = gtk.ButtonNew()
-
-		imgs := map[int]*gtk.Image{}
-		imgs[number], _ = gtk.ImageNewFromPixbuf(pixbuf)
-		btns[number].SetImage(imgs[number])
-
-		btns[number].Connect("clicked", func() {
-			increment(label, number + 1)
-		})
-		mainBox.Add(btns[number])
-	}
-
-
-	mainBox.Add(label)
+	renderItems(mainBox, window)
 
 
 	window.Connect("destroy", func() {gtk.MainQuit()})
 	window.ShowAll()
 	gtk.Main()
+}
+
+func renderItems(mainBox *gtk.Box, window *gtk.Window) {
+	iconTheme, err := gtk.IconThemeGetDefault()
+	if err != nil {
+		fmt.Println("Unable to icon theme:", err)
+	}
+
+	for item := range len(itemList.List) {
+		pixbuf, err := iconTheme.LoadIcon(
+			itemList.List[item]["icon"], config.IconSize, 
+			gtk.ICON_LOOKUP_FORCE_SIZE)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		fmt.Println(itemList.List[item]["title"])
+
+		btns := map[int]*gtk.Button{}
+		btns[item], _ = gtk.ButtonNew()
+
+		imgs := map[int]*gtk.Image{}
+		imgs[item], _ = gtk.ImageNewFromPixbuf(pixbuf)
+		btns[item].SetImage(imgs[item])
+
+		// btns[item].Connect("clicked", func() {
+		// 	layershell.SetMargin(
+		// 		window, layershell.LAYER_SHELL_EDGE_LEFT, config.IconSize * -2)
+		// })
+
+		mainBox.Add(btns[item])
+	}
 }
 
 func addCssProvider(cssFile string) {
@@ -77,17 +91,14 @@ func addCssProvider(cssFile string) {
 	}
 }
 
-func setWindowProperty(window *gtk.Window, 
-					   layer string, 
-					   position string, 
-					   margin int) gtk.Orientation {
+func setWindowProperty(window *gtk.Window) gtk.Orientation {
 
 	LAYER_SHELL_LAYER := layershell.LAYER_SHELL_LAYER_BOTTOM
 	LAYER_SHELL_EDGE := layershell.LAYER_SHELL_EDGE_LEFT
 	MAIN_BOX_ORIENTATION := gtk.ORIENTATION_VERTICAL
 
 
-	switch layer {
+	switch config.Layer {
 	case "background":
 		LAYER_SHELL_LAYER = layershell.LAYER_SHELL_LAYER_BACKGROUND
 	case "bottom":
@@ -98,7 +109,7 @@ func setWindowProperty(window *gtk.Window,
 		LAYER_SHELL_LAYER = layershell.LAYER_SHELL_LAYER_OVERLAY
 	}
 
-	switch position {
+	switch config.Position {
 	case "left":
 		LAYER_SHELL_EDGE = layershell.LAYER_SHELL_EDGE_LEFT
 	case "bottom":
@@ -115,12 +126,7 @@ func setWindowProperty(window *gtk.Window,
 	layershell.SetNamespace(window, "hypr-dock")
 	layershell.SetLayer(window, LAYER_SHELL_LAYER)
 	layershell.SetAnchor(window, LAYER_SHELL_EDGE, true)
-	layershell.SetMargin(window, LAYER_SHELL_EDGE, margin)
+	layershell.SetMargin(window, LAYER_SHELL_EDGE, config.Margin)
 
 	return MAIN_BOX_ORIENTATION
-}
-
-func increment(label *gtk.Label, inc int) {
-	labelNum, _ := strconv.Atoi(label.GetLabel())
-	label.SetLabel(strconv.Itoa(labelNum + inc))
 }
