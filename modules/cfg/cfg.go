@@ -2,16 +2,16 @@ package cfg
 
 import (
 	"os"
-    "fmt"
+	"fmt"
 	"io/ioutil"
-    "github.com/goccy/go-json"
+	"github.com/goccy/go-json"
 	"github.com/akshaybharambe14/go-jsonc"
 )
 
 type Config struct {
 	CurrentTheme  	string
-    IconSize   		int
-    Layer     		string
+	IconSize   		int
+	Layer     		string
 	Position		string
 	Margin			int
 }

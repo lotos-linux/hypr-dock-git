@@ -1,7 +1,7 @@
 {
     "CurrentTheme": "default",
     "IconSize": 25,
-    "Layer": "top",
+    "Layer": "bottom",
     // position
     "Position": "left",
     "Margin": 10

@@ -25,7 +25,7 @@ func main() {
 	window.SetTitle("hypr-dock")
 
 	orientation := setWindowProperty(window, config.Layer, 
-									 config.Position, config.Margin)
+	                                 config.Position, config.Margin)
 									 
 	addCssProvider(THEMES_DIR + config.CurrentTheme + "/style.css")
 
