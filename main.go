@@ -9,7 +9,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-const version = "0.0.1"
+const version = "0.0.2alpha"
 
 const CONFIG_DIR = "./configs/"
 const THEMES_DIR = CONFIG_DIR + "themes/"
