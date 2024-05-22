@@ -3,34 +3,39 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"inclayer-gotk/modules/cfg"
 	"github.com/dlasky/gotk3-layershell/layershell"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/BurntSushi/toml"
 )
 
 const version = "0.0.1"
 
+const CONFIG_DIR = "./configs/"
+const THEMES_DIR = CONFIG_DIR + "themes/"
+const MAIN_CONFIG = CONFIG_DIR + "main.json"
+
 func main() {
-	configReader()
+	fmt.Println("Start")
+	config := cfg.Connect(MAIN_CONFIG)
 
 	gtk.Init(nil)
 
 	window, _ := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	window.SetTitle("inclayer-go")
 
-	addLayerShell(window)
-	addCssProvider("./configs/style.css")
+	orientation := setWindowProperty(window, config.Layer, config.Position, config.Margin)
+	addCssProvider(THEMES_DIR + config.CurrentTheme + "/style.css")
 
 
-	mainBox, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+	mainBox, _ := gtk.BoxNew(orientation, 0)
 	mainBox.SetName("main-box")
 	window.Add(mainBox)
 	
 
 	iconTheme, _ := gtk.IconThemeGetDefault()
 	pixbuf, _ := iconTheme.LoadIcon(
-		"system-file-manager", 22, gtk.ICON_LOOKUP_FORCE_SIZE)
+		"system-file-manager", config.IconSize, gtk.ICON_LOOKUP_FORCE_SIZE)
 
 
 	label, _ := gtk.LabelNew("0")
@@ -70,27 +75,46 @@ func addCssProvider(cssFile string) {
 	}
 }
 
-func addLayerShell(window *gtk.Window) {
+func setWindowProperty(window *gtk.Window, layer string, position string, margin int) gtk.Orientation {
+	LAYER_SHELL_LAYER := layershell.LAYER_SHELL_LAYER_BOTTOM
+	LAYER_SHELL_EDGE := layershell.LAYER_SHELL_EDGE_LEFT
+	MAIN_BOX_ORIENTATION := gtk.ORIENTATION_VERTICAL
+
+
+	switch layer {
+	case "background":
+		LAYER_SHELL_LAYER = layershell.LAYER_SHELL_LAYER_BACKGROUND
+	case "bottom":
+		LAYER_SHELL_LAYER = layershell.LAYER_SHELL_LAYER_BOTTOM
+	case "top":
+		LAYER_SHELL_LAYER = layershell.LAYER_SHELL_LAYER_TOP
+	case "overlay":
+		LAYER_SHELL_LAYER = layershell.LAYER_SHELL_LAYER_OVERLAY
+	}
+
+	switch position {
+	case "left":
+		LAYER_SHELL_EDGE = layershell.LAYER_SHELL_EDGE_LEFT
+	case "bottom":
+		LAYER_SHELL_EDGE = layershell.LAYER_SHELL_EDGE_BOTTOM
+		MAIN_BOX_ORIENTATION = gtk.ORIENTATION_HORIZONTAL
+	case "right":
+		LAYER_SHELL_EDGE = layershell.LAYER_SHELL_EDGE_RIGHT
+	case "top":
+		LAYER_SHELL_EDGE = layershell.LAYER_SHELL_EDGE_TOP
+		MAIN_BOX_ORIENTATION = gtk.ORIENTATION_HORIZONTAL
+	}
+
 	layershell.InitForWindow(window)
 	layershell.SetNamespace(window, "inclayer-go")
-	layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_BOTTOM)
-	layershell.SetAnchor(window, layershell.LAYER_SHELL_EDGE_LEFT, true)
-	layershell.SetMargin(window, layershell.LAYER_SHELL_EDGE_LEFT, 10)
+	layershell.SetLayer(window, LAYER_SHELL_LAYER)
+	layershell.SetAnchor(window, LAYER_SHELL_EDGE, true)
+	layershell.SetMargin(window, LAYER_SHELL_EDGE, margin)
+
+	return MAIN_BOX_ORIENTATION
 }
 
 func increment(label *gtk.Label, inc int) {
 	labelNum, _ := strconv.Atoi(label.GetLabel())
 	label.SetLabel(strconv.Itoa(labelNum + inc))
-}
-
-func configReader() {
-	type Config struct {
-		x int
-		text string
-	}
-
-	mainConf := "./configs/main.toml"
-	var config Config
-	data, _ := toml.DecodeFile(mainConf, &config)
-	fmt.Println(data)
 }
