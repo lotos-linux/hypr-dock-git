@@ -24,7 +24,9 @@ func main() {
 	window, _ := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	window.SetTitle("inclayer-go")
 
-	orientation := setWindowProperty(window, config.Layer, config.Position, config.Margin)
+	orientation := setWindowProperty(window, config.Layer, 
+									 config.Position, config.Margin)
+									 
 	addCssProvider(THEMES_DIR + config.CurrentTheme + "/style.css")
 
 
@@ -79,7 +81,7 @@ func setWindowProperty(window *gtk.Window,
 					   layer string, 
 					   position string, 
 					   margin int) gtk.Orientation {
-						
+
 	LAYER_SHELL_LAYER := layershell.LAYER_SHELL_LAYER_BOTTOM
 	LAYER_SHELL_EDGE := layershell.LAYER_SHELL_EDGE_LEFT
 	MAIN_BOX_ORIENTATION := gtk.ORIENTATION_VERTICAL
