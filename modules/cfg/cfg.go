@@ -9,7 +9,7 @@ import (
 )
 
 type Config struct {
-	CurrentTheme	string
+	CurrentTheme 	string
 	IconSize   		int
 	Layer     		string
 	Position		string
