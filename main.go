@@ -17,7 +17,7 @@ const MAIN_CONFIG = CONFIG_DIR + "main.jsonc"
 
 func main() {
 	fmt.Println("Start")
-	config := cfg.Connect(MAIN_CONFIG)
+	config := cfg.ConnectConfig(MAIN_CONFIG)
 
 	gtk.Init(nil)
 
