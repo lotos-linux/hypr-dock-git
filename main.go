@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
-	"inclayer-gotk/modules/cfg"
+	"hypr-dock/modules/cfg"
 	"github.com/dlasky/gotk3-layershell/layershell"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
@@ -22,7 +22,7 @@ func main() {
 	gtk.Init(nil)
 
 	window, _ := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
-	window.SetTitle("inclayer-go")
+	window.SetTitle("hypr-dock")
 
 	orientation := setWindowProperty(window, config.Layer, 
 									 config.Position, config.Margin)
@@ -112,7 +112,7 @@ func setWindowProperty(window *gtk.Window,
 	}
 
 	layershell.InitForWindow(window)
-	layershell.SetNamespace(window, "inclayer-go")
+	layershell.SetNamespace(window, "hypr-dock")
 	layershell.SetLayer(window, LAYER_SHELL_LAYER)
 	layershell.SetAnchor(window, LAYER_SHELL_EDGE, true)
 	layershell.SetMargin(window, LAYER_SHELL_EDGE, margin)

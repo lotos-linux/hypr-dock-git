@@ -1,4 +1,4 @@
-module inclayer-gotk
+module hypr-dock
 
 go 1.22.3
 
