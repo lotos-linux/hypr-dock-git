@@ -13,7 +13,7 @@ const version = "0.0.1"
 
 const CONFIG_DIR = "./configs/"
 const THEMES_DIR = CONFIG_DIR + "themes/"
-const MAIN_CONFIG = CONFIG_DIR + "main.json"
+const MAIN_CONFIG = CONFIG_DIR + "main.jsonc"
 
 func main() {
 	fmt.Println("Start")

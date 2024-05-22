@@ -2,6 +2,7 @@
     "CurrentTheme": "default",
     "IconSize": 25,
     "Layer": "top",
+    // position
     "Position": "left",
     "Margin": 10
 }

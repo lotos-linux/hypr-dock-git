@@ -3,8 +3,9 @@ package cfg
 import (
 	"os"
     "fmt"
+	"io/ioutil"
     "github.com/goccy/go-json"
-	// "github.com/dlasky/gotk3-layershell/layershell"
+	"github.com/akshaybharambe14/go-jsonc"
 )
 
 type Config struct {
@@ -18,11 +19,13 @@ type Config struct {
 func Connect(jsonFile string) Config {
 	file, _ := os.Open(jsonFile)
 	defer file.Close()
-	decoder := json.NewDecoder(file)
+
+	decoder := jsonc.NewDecoder(file)
+	res, err := ioutil.ReadAll(decoder)
+
 	config := Config{}
-	err := decoder.Decode(&config)
-	if err != nil {
-	  fmt.Println("error:", err)
+	if err = json.Unmarshal(res, &config); err != nil {
+		fmt.Println("error while json Unmarshal: ", err)
 	}
 
 	return config
