@@ -2,10 +2,10 @@ get:
 		go mod tidy
 
 build:
-		go build -v -o bin/inclayer-go .
+		go build -v -o bin/hypr-dock .
 
 run:
 		go run .
 
 exec:
-		./bin/inclayer-go
+		./bin/hypr-dock
