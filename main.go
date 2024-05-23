@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"flag"
 	"hypr-dock/modules/cfg"
 	"github.com/dlasky/gotk3-layershell/layershell"
 	"github.com/gotk3/gotk3/gdk"
@@ -15,13 +16,27 @@ const THEMES_DIR = CONFIG_DIR + "themes/"
 const MAIN_CONFIG = CONFIG_DIR + "config.jsonc"
 const ITEMS_CONFIG = CONFIG_DIR + "items.json"
 
-var config = cfg.ConnectConfig(MAIN_CONFIG)
-var itemList = cfg.ReadItemList(ITEMS_CONFIG)
+var config cfg.Config
+var itemList cfg.ItemList
 
 var err error
 var app *gtk.Box
 
+func initSettings() {
+	configFile := flag.String("config", MAIN_CONFIG, "config file")
+	
+	config = cfg.ConnectConfig(*configFile)
+	itemList = cfg.ReadItemList(ITEMS_CONFIG)
+
+	currentTheme := flag.String("theme", config.CurrentTheme, "theme")
+	config.CurrentTheme = *currentTheme
+
+	flag.Parse()
+}
+
 func main() {
+	initSettings()
+
 	gtk.Init(nil)
 
 	window, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
@@ -92,40 +107,39 @@ func addCssProvider(cssFile string) error {
 }
 
 func setWindowProperty(window *gtk.Window) gtk.Orientation {
-	LAYER_SHELL_LAYER := layershell.LAYER_SHELL_LAYER_BOTTOM
-	LAYER_SHELL_EDGE := layershell.LAYER_SHELL_EDGE_LEFT
-	APP_ORIENTATION := gtk.ORIENTATION_VERTICAL
-
+	AppOreintation := gtk.ORIENTATION_VERTICAL
+	Layer := layershell.LAYER_SHELL_LAYER_BOTTOM
+	Edge := layershell.LAYER_SHELL_EDGE_LEFT
 
 	switch config.Layer {
 	case "background":
-		LAYER_SHELL_LAYER = layershell.LAYER_SHELL_LAYER_BACKGROUND
+		Layer = layershell.LAYER_SHELL_LAYER_BACKGROUND
 	case "bottom":
-		LAYER_SHELL_LAYER = layershell.LAYER_SHELL_LAYER_BOTTOM
+		Layer = layershell.LAYER_SHELL_LAYER_BOTTOM
 	case "top":
-		LAYER_SHELL_LAYER = layershell.LAYER_SHELL_LAYER_TOP
+		Layer = layershell.LAYER_SHELL_LAYER_TOP
 	case "overlay":
-		LAYER_SHELL_LAYER = layershell.LAYER_SHELL_LAYER_OVERLAY
+		Layer = layershell.LAYER_SHELL_LAYER_OVERLAY
 	}
 
 	switch config.Position {
 	case "left":
-		LAYER_SHELL_EDGE = layershell.LAYER_SHELL_EDGE_LEFT
+		Edge = layershell.LAYER_SHELL_EDGE_LEFT
 	case "bottom":
-		LAYER_SHELL_EDGE = layershell.LAYER_SHELL_EDGE_BOTTOM
-		APP_ORIENTATION = gtk.ORIENTATION_HORIZONTAL
+		Edge = layershell.LAYER_SHELL_EDGE_BOTTOM
+		AppOreintation = gtk.ORIENTATION_HORIZONTAL
 	case "right":
-		LAYER_SHELL_EDGE = layershell.LAYER_SHELL_EDGE_RIGHT
+		Edge = layershell.LAYER_SHELL_EDGE_RIGHT
 	case "top":
-		LAYER_SHELL_EDGE = layershell.LAYER_SHELL_EDGE_TOP
-		APP_ORIENTATION = gtk.ORIENTATION_HORIZONTAL
+		Edge = layershell.LAYER_SHELL_EDGE_TOP
+		AppOreintation = gtk.ORIENTATION_HORIZONTAL
 	}
 
 	layershell.InitForWindow(window)
 	layershell.SetNamespace(window, "hypr-dock")
-	layershell.SetLayer(window, LAYER_SHELL_LAYER)
-	layershell.SetAnchor(window, LAYER_SHELL_EDGE, true)
-	layershell.SetMargin(window, LAYER_SHELL_EDGE, config.Margin)
+	layershell.SetLayer(window, Layer)
+	layershell.SetAnchor(window, Edge, true)
+	layershell.SetMargin(window, Edge, config.Margin)
 
-	return APP_ORIENTATION
+	return AppOreintation
 }

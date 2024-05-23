@@ -9,6 +9,8 @@ import (
 	// "github.com/tidwall/sjson"
 )
 
+var err error
+
 type Config struct {
 	CurrentTheme 	string
 	IconSize   		int
@@ -18,8 +20,24 @@ type Config struct {
 	Pinned			[]map[string]string
 }
 
+func GetDefaultConfig() Config {
+	config := Config{}
+
+	config.CurrentTheme = "default"
+	config.IconSize = 25
+	config.Layer = "bottom"
+	config.Position = "left"
+	config.Margin = 10
+
+	return config
+}
+
 func ConnectConfig(jsoncFile string) Config {
-	file, _ := os.Open(jsoncFile)
+	file, err := os.Open(jsoncFile)
+	if err != nil {
+		fmt.Println("Config file not found!\n", err, "\nLoad default config")
+		return GetDefaultConfig()
+	}
 	defer file.Close()
 
 	decoder := jsonc.NewDecoder(file)
@@ -27,7 +45,8 @@ func ConnectConfig(jsoncFile string) Config {
 
 	config := Config{}
 	if err = json.Unmarshal(res, &config); err != nil {
-		fmt.Println("error while json Unmarshal: ", err)
+		fmt.Println("Config is incorrect!\n", err, "\nLoad default config")
+		return GetDefaultConfig()
 	}
 
 	return config
@@ -47,7 +66,7 @@ func ReadItemList(jsonFile string) ItemList {
 	itemList := ItemList{}
 	err := decoder.Decode(&itemList)
 	if err != nil {
-	  fmt.Println("error:", err)
+	  fmt.Println("error: ", err)
 	}
 	
 	return itemList
