@@ -12,7 +12,7 @@ const version = "0.0.2alpha"
 
 const CONFIG_DIR = "./configs/"
 const THEMES_DIR = CONFIG_DIR + "themes/"
-const MAIN_CONFIG = CONFIG_DIR + "main.jsonc"
+const MAIN_CONFIG = CONFIG_DIR + "config.jsonc"
 const ITEMS_CONFIG = CONFIG_DIR + "items.json"
 
 var config = cfg.ConnectConfig(MAIN_CONFIG)
@@ -34,7 +34,8 @@ func main() {
 
 	err = addCssProvider(THEMES_DIR + config.CurrentTheme + "/style.css")	 
 	if err != nil {
-		fmt.Println("CSS file not found, the default GTK theme is running!\n", err)
+		fmt.Println(
+			"CSS file not found, the default GTK theme is running!\n", err)
 		app, _ = gtk.BoxNew(orientation, 5)
 	} else {
 		app, _ = gtk.BoxNew(orientation, 0)
@@ -81,7 +82,8 @@ func addCssProvider(cssFile string) error {
 	if err == nil {
 		screen, _ := gdk.ScreenGetDefault()
 		gtk.AddProviderForScreen(
-			screen, cssProvider,gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+			screen, cssProvider, 
+			gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 		return nil
 	} else {
 

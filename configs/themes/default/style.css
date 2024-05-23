@@ -3,13 +3,13 @@ window {
   border-radius: 6px;
 }
 
+#app {
+  padding: 6px;
+  margin: 2px 0px;
+}
+
 button {
   background-color: transparent;
   margin: 2px 0px;
   padding: 4px;
-}
-
-#app {
-  padding: 6px;
-  margin: 2px 0px;
 }
