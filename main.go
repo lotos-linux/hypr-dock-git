@@ -95,16 +95,18 @@ func renderItems(app *gtk.Box) {
 func addCssProvider(cssFile string) error {
 	cssProvider, _ := gtk.CssProviderNew()
 	err := cssProvider.LoadFromPath(cssFile)
+
 	if err == nil {
 		screen, _ := gdk.ScreenGetDefault()
+
 		gtk.AddProviderForScreen(
 			screen, cssProvider, 
 			gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-		return nil
-	} else {
 
-		return err
+		return nil
 	}
+
+	return err
 }
 
 func setWindowProperty(window *gtk.Window) gtk.Orientation {
