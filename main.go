@@ -11,6 +11,7 @@ import (
 
 const version = "0.0.2alpha"
 
+// Only during development
 const CONFIG_DIR = "./configs/"
 const THEMES_DIR = CONFIG_DIR + "themes/"
 const MAIN_CONFIG = CONFIG_DIR + "config.jsonc"
@@ -24,7 +25,7 @@ var app *gtk.Box
 
 func initSettings() {
 	configFile := flag.String("config", MAIN_CONFIG, "config file")
-	
+
 	config = cfg.ConnectConfig(*configFile)
 	itemList = cfg.ReadItemList(ITEMS_CONFIG)
 
