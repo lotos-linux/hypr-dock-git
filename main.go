@@ -53,18 +53,31 @@ func main() {
 	if err != nil {
 		fmt.Println(
 			"CSS file not found, the default GTK theme is running!\n", err)
-		app, _ = gtk.BoxNew(orientation, 5)
-	} else {
-		app, _ = gtk.BoxNew(orientation, 0)
-		app.SetName("app")
 	}
 
-	renderItems(app)
+	buildApp(orientation)
 
 	window.Add(app)
 	window.Connect("destroy", func() {gtk.MainQuit()})
 	window.ShowAll()
 	gtk.Main()
+}
+
+func buildApp(orientation gtk.Orientation) {
+	app, _ = gtk.BoxNew(orientation, config.Spacing)
+	app.SetName("app")
+
+	switch orientation {
+	case gtk.ORIENTATION_HORIZONTAL:
+		app.SetMarginEnd(config.Spacing / 2)
+		app.SetMarginStart(config.Spacing / 2)
+	case gtk.ORIENTATION_VERTICAL:
+		app.SetMarginBottom(config.Spacing / 2)
+		app.SetMarginTop(config.Spacing / 2)
+	}
+
+
+	renderItems(app)
 }
 
 func renderItems(app *gtk.Box) {
@@ -92,6 +105,8 @@ func renderItems(app *gtk.Box) {
 		app.Add(btns[item])
 	}
 }
+
+
 
 func addCssProvider(cssFile string) error {
 	cssProvider, _ := gtk.CssProviderNew()

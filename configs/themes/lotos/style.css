@@ -5,13 +5,10 @@ window {
 
 #app {
   padding: 5px;
-  /* margin: 0px 3px; */
 }
 
 button {
   background-color: transparent;
-  border-radius: 50%;
-  margin: 0px 4px;
   margin-bottom: 2px;
   padding: 4px;
 }

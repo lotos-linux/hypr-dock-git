@@ -18,17 +18,19 @@ type Config struct {
 	Position		string
 	Margin			int
 	Blur			bool
+	Spacing			int
 }
 
 func GetDefaultConfig() Config {
 	config := Config{}
 
 	config.CurrentTheme = "default"
-	config.IconSize = 25
+	config.IconSize = 22
 	config.Layer = "bottom"
-	config.Position = "left"
+	config.Position = "bottom"
 	config.Margin = 10
 	config.Blur = true
+	config.Spacing = 8
 
 	return config
 }

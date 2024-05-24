@@ -150,7 +150,7 @@ func initHyprEvents() {
 		bufer := make([]byte, 10240)
 		unixNumber, _ := unixConnect.Read(bufer)
 		hyprEvent := string(bufer[:unixNumber])
-		// fmt.Println(hyprEvent)
+		// fmt.Println(hyprEvent) 
 
 		if strings.Contains(hyprEvent, "configreloaded") {
 			addLayerRule()
