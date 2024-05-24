@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os/exec"
 	"fmt"
 	"flag"
 	"hypr-dock/modules/cfg"
@@ -107,6 +108,12 @@ func renderItems(app *gtk.Box) {
 		imgs := map[int]*gtk.Image{}
 		imgs[item], _ = gtk.ImageNewFromPixbuf(pixbuf)
 		btns[item].SetImage(imgs[item])
+
+		btns[item].Connect("clicked", func() {
+			go func() {
+				exec.Command("kitty", "ranger").Run()
+			}()
+		})
 
 		app.Add(btns[item])
 	}
