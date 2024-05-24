@@ -14,6 +14,41 @@
             "title": "kitty",
             "class": "kitty",
             "icon": "kitty"
+        },
+        {
+            "title": "kitty",
+            "class": "kitty",
+            "icon": "krita"
+        },
+        {
+            "title": "kitty",
+            "class": "kitty",
+            "icon": "inkscape"
+        },
+        {
+            "title": "kitty",
+            "class": "kitty",
+            "icon": "vscode"
+        },
+        {
+            "title": "kitty",
+            "class": "kitty",
+            "icon": "obs"
+        },
+        {
+            "title": "kitty",
+            "class": "kitty",
+            "icon": "lutris"
+        },
+        {
+            "title": "kitty",
+            "class": "kitty",
+            "icon": "chromium"
+        },
+        {
+            "title": "kitty",
+            "class": "kitty",
+            "icon": "system-file-manager"
         }
     ]
 }

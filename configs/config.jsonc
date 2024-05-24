@@ -1,7 +1,8 @@
 {
     "CurrentTheme": "lotos",
-    "IconSize": 25,
+    "IconSize": 21,
     "Layer": "bottom",
-    "Position": "left",
-    "Margin": 10
+    "Position": "bottom",
+    "Margin": 8,
+    "Blur": true
 }

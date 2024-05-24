@@ -37,6 +37,7 @@ func initSettings() {
 
 func main() {
 	initSettings()
+	go initHyprEvents()
 
 	gtk.Init(nil)
 
@@ -143,6 +144,8 @@ func setWindowProperty(window *gtk.Window) gtk.Orientation {
 	layershell.SetLayer(window, Layer)
 	layershell.SetAnchor(window, Edge, true)
 	layershell.SetMargin(window, Edge, config.Margin)
+
+	addLayerRule()
 
 	return AppOreintation
 }

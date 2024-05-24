@@ -17,7 +17,7 @@ type Config struct {
 	Layer     		string
 	Position		string
 	Margin			int
-	Pinned			[]map[string]string
+	Blur			bool
 }
 
 func GetDefaultConfig() Config {
@@ -28,6 +28,7 @@ func GetDefaultConfig() Config {
 	config.Layer = "bottom"
 	config.Position = "left"
 	config.Margin = 10
+	config.Blur = true
 
 	return config
 }
