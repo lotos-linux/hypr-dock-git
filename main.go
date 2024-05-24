@@ -32,6 +32,12 @@ func initSettings() {
 	currentTheme := flag.String("theme", config.CurrentTheme, "theme")
 	config.CurrentTheme = *currentTheme
 
+	themeConfig := cfg.ConnectConfig(
+		THEMES_DIR + config.CurrentTheme + "/" + config.CurrentTheme + ".jsonc")
+
+	config.Blur = themeConfig.Blur
+	config.Spacing = themeConfig.Spacing
+
 	flag.Parse()
 }
 

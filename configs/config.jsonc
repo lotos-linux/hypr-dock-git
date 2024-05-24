@@ -11,11 +11,5 @@
     "Position": "bottom",
 
     // Offset from the edge of the screen (px) (default 8)
-    "Margin": 8,
-
-    // Blur window (bool) (default true)
-    "Blur": true,
-
-    // Distance between elements (px) (default 8)
-    "Spacing": 8
+    "Margin": 8
 }

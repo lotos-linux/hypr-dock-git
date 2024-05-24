@@ -19,16 +19,17 @@ type Config struct {
 	Margin			int
 	Blur			bool
 	Spacing			int
+	Priority		string		
 }
 
 func GetDefaultConfig() Config {
 	config := Config{}
 
-	config.CurrentTheme = "default"
-	config.IconSize = 22
+	config.CurrentTheme = "lotos"
+	config.IconSize = 21
 	config.Layer = "bottom"
 	config.Position = "bottom"
-	config.Margin = 10
+	config.Margin = 8
 	config.Blur = true
 	config.Spacing = 8
 
@@ -45,6 +46,7 @@ func ConnectConfig(jsoncFile string) Config {
 
 	decoder := jsonc.NewDecoder(file)
 	res, err := ioutil.ReadAll(decoder)
+	fmt.Println(json.Valid(res), jsoncFile)
 
 	config := Config{}
 	if err = json.Unmarshal(res, &config); err != nil {
