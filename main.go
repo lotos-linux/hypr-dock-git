@@ -1,13 +1,15 @@
 package main
 
 import (
-	"os/exec"
+	// "os/exec"
 	"fmt"
 	"flag"
+	"time"
 	"hypr-dock/modules/cfg"
 	"github.com/dlasky/gotk3-layershell/layershell"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
+	// "github.com/gotk3/gotk3/glib"
 )
 
 const version = "0.0.2alpha"
@@ -22,7 +24,9 @@ var config cfg.Config
 var itemList cfg.ItemList
 
 var err error
+var window *gtk.Window
 var app *gtk.Box
+var stop = make(chan bool, 3)
 
 func initSettings() {
 	configFile := flag.String("config", MAIN_CONFIG, "config file")
@@ -48,7 +52,7 @@ func main() {
 
 	gtk.Init(nil)
 
-	window, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	window, err = gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
 		fmt.Println("Unable to create window:", err)
 	}
@@ -62,12 +66,43 @@ func main() {
 			"CSS file not found, the default GTK theme is running!\n", err)
 	}
 
+
 	buildApp(orientation)
+
+	window.Connect("enter-notify-event", func(window *gtk.Window, e *gdk.Event) {
+		go func() {
+			changeLayer(1)
+		}()
+	})
+
+	window.Connect("leave-notify-event", func(window *gtk.Window, e *gdk.Event) {
+		event := gdk.EventCrossingNewFromEvent(e)
+		xCoord := event.XRoot()
+		yCoord := event.YRoot()
+		isInWindow := xCoord < 7 || xCoord > 402 || yCoord < 7 || yCoord > 40
+		if isInWindow {
+			go func() {
+				time.Sleep(time.Second / 3) 
+				if isInWindow {
+					changeLayer(2)
+				}
+			}()
+		}
+	})
 
 	window.Add(app)
 	window.Connect("destroy", func() {gtk.MainQuit()})
 	window.ShowAll()
 	gtk.Main()
+}
+
+func changeLayer(mode int) {
+	switch mode {
+	case 1:
+		layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_TOP)
+	case 2:
+		layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_BOTTOM)
+	}
 }
 
 func buildApp(orientation gtk.Orientation) {
@@ -111,15 +146,13 @@ func renderItems(app *gtk.Box) {
 
 		btns[item].Connect("clicked", func() {
 			go func() {
-				exec.Command("kitty", "ranger").Run()
+
 			}()
 		})
 
 		app.Add(btns[item])
 	}
 }
-
-
 
 func addCssProvider(cssFile string) error {
 	cssProvider, _ := gtk.CssProviderNew()

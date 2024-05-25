@@ -11,5 +11,5 @@
     "Position": "bottom",
 
     // Offset from the edge of the screen (px) (default 8)
-    "Margin": 8
+    "Margin": 0
 }

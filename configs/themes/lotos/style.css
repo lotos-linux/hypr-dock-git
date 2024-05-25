@@ -1,10 +1,13 @@
 window {
   /* background-color: rgba(52, 52, 52, 0.410); */
-  background-color: rgba(42, 41, 49, 0.59);
+  background-color: transparent;
   border-radius: 12px;
 }
 
 #app {
+  background-color: rgba(42, 41, 49, 0.59);
+  border-radius: 12px;
+  margin-bottom: 8px;
   padding: 5px;
 }
 
