@@ -4,12 +4,9 @@
     // Icon size (px) (default 22)
     "IconSize": 21,
 
-    // Window overlay layer height (background, bottom, top, overlay) (default "bottom")
-    "Layer": "bottom",
+    // Window overlay layer height (auto, background, bottom, top, overlay) (default "auto")
+    "Layer": "auto",
 
     // Window position on screen (top, bottom, left, right) (default "bottom")
-    "Position": "bottom",
-
-    // Offset from the edge of the screen (px) (default 8)
-    "Margin": 0
+    "Position": "bottom"
 }

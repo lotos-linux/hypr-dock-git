@@ -16,7 +16,6 @@ type Config struct {
 	IconSize   		int
 	Layer     		string
 	Position		string
-	Margin			int
 	Blur			bool
 	Spacing			int
 	Priority		string		
@@ -27,9 +26,8 @@ func GetDefaultConfig() Config {
 
 	config.CurrentTheme = "lotos"
 	config.IconSize = 21
-	config.Layer = "bottom"
+	config.Layer = "auto"
 	config.Position = "bottom"
-	config.Margin = 8
 	config.Blur = true
 	config.Spacing = 8
 

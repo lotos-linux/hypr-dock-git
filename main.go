@@ -12,7 +12,7 @@ import (
 	// "github.com/gotk3/gotk3/glib"
 )
 
-const version = "0.0.2alpha"
+const version = "0.0.2-1-dev"
 
 // Only during development
 const CONFIG_DIR = "./configs/"
@@ -24,9 +24,10 @@ var config cfg.Config
 var itemList cfg.ItemList
 
 var err error
+
 var window *gtk.Window
 var app *gtk.Box
-var stop = make(chan bool, 3)
+var itemsBox *gtk.Box
 
 func initSettings() {
 	configFile := flag.String("config", MAIN_CONFIG, "config file")
@@ -66,29 +67,7 @@ func main() {
 			"CSS file not found, the default GTK theme is running!\n", err)
 	}
 
-
 	buildApp(orientation)
-
-	window.Connect("enter-notify-event", func(window *gtk.Window, e *gdk.Event) {
-		go func() {
-			changeLayer(1)
-		}()
-	})
-
-	window.Connect("leave-notify-event", func(window *gtk.Window, e *gdk.Event) {
-		event := gdk.EventCrossingNewFromEvent(e)
-		xCoord := event.XRoot()
-		yCoord := event.YRoot()
-		isInWindow := xCoord < 7 || xCoord > 402 || yCoord < 7 || yCoord > 40
-		if isInWindow {
-			go func() {
-				time.Sleep(time.Second / 3) 
-				if isInWindow {
-					changeLayer(2)
-				}
-			}()
-		}
-	})
 
 	window.Add(app)
 	window.Connect("destroy", func() {gtk.MainQuit()})
@@ -96,33 +75,27 @@ func main() {
 	gtk.Main()
 }
 
-func changeLayer(mode int) {
-	switch mode {
-	case 1:
-		layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_TOP)
-	case 2:
-		layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_BOTTOM)
-	}
-}
-
 func buildApp(orientation gtk.Orientation) {
-	app, _ = gtk.BoxNew(orientation, config.Spacing)
+	app, _ = gtk.BoxNew(orientation, 0)
 	app.SetName("app")
+
+	itemsBox, _ = gtk.BoxNew(orientation, config.Spacing)
+	itemsBox.SetName("items-box")
 
 	switch orientation {
 	case gtk.ORIENTATION_HORIZONTAL:
-		app.SetMarginEnd(config.Spacing / 2)
-		app.SetMarginStart(config.Spacing / 2)
+		itemsBox.SetMarginEnd(config.Spacing / 2)
+		itemsBox.SetMarginStart(config.Spacing / 2)
 	case gtk.ORIENTATION_VERTICAL:
-		app.SetMarginBottom(config.Spacing / 2)
-		app.SetMarginTop(config.Spacing / 2)
+		itemsBox.SetMarginBottom(config.Spacing / 2)
+		itemsBox.SetMarginTop(config.Spacing / 2)
 	}
 
-
-	renderItems(app)
+	renderItems(itemsBox)
+	app.Add(itemsBox)
 }
 
-func renderItems(app *gtk.Box) {
+func renderItems(itemsBox *gtk.Box) {
 	iconTheme, err := gtk.IconThemeGetDefault()
 	if err != nil {
 		fmt.Println("Unable to icon theme:", err)
@@ -150,7 +123,7 @@ func renderItems(app *gtk.Box) {
 			}()
 		})
 
-		app.Add(btns[item])
+		itemsBox.Add(btns[item])
 	}
 }
 
@@ -202,11 +175,51 @@ func setWindowProperty(window *gtk.Window) gtk.Orientation {
 
 	layershell.InitForWindow(window)
 	layershell.SetNamespace(window, "hypr-dock")
-	layershell.SetLayer(window, Layer)
 	layershell.SetAnchor(window, Edge, true)
-	layershell.SetMargin(window, Edge, config.Margin)
+	layershell.SetMargin(window, Edge, 0)
 
 	addLayerRule()
 
+	if config.Layer == "auto" {
+		layershell.SetLayer(window, Layer)
+		autoLayer()
+		return AppOreintation
+	}
+
+	layershell.SetLayer(window, Layer)
 	return AppOreintation
+}
+
+func autoLayer() {
+	window.Connect("enter-notify-event", func(window *gtk.Window, e *gdk.Event) {
+		event := gdk.EventCrossingNewFromEvent(e)
+		isInWindow := event.Detail() == 3 || event.Detail() == 4 || true
+
+		if isInWindow {
+			go func() {
+				setLayer("top")
+			}()
+		}
+	})
+
+	window.Connect("leave-notify-event", func(window *gtk.Window, e *gdk.Event) {
+		event := gdk.EventCrossingNewFromEvent(e)
+		isInWindow := event.Detail() == 3 || event.Detail() == 4
+		
+		if isInWindow {
+			go func() {
+				time.Sleep(time.Second / 3) 
+				setLayer("bottom")
+			}()
+		}
+	})
+}
+
+func setLayer(layer string) {
+	switch layer {
+	case "top":
+		layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_TOP)
+	case "bottom":
+		layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_BOTTOM)
+	}
 }
