@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"flag"
 	"time"
+	"strconv"
 	"hypr-dock/modules/cfg"
 	"github.com/dlasky/gotk3-layershell/layershell"
 	"github.com/gotk3/gotk3/gdk"
@@ -29,17 +30,19 @@ var window *gtk.Window
 var app *gtk.Box
 var itemsBox *gtk.Box
 
+var isCancelHide int
+
 func initSettings() {
 	configFile := flag.String("config", MAIN_CONFIG, "config file")
 
-	config = cfg.ConnectConfig(*configFile)
+	config = cfg.ConnectConfig(*configFile, false)
 	itemList = cfg.ReadItemList(ITEMS_CONFIG)
 
 	currentTheme := flag.String("theme", config.CurrentTheme, "theme")
 	config.CurrentTheme = *currentTheme
 
 	themeConfig := cfg.ConnectConfig(
-		THEMES_DIR + config.CurrentTheme + "/" + config.CurrentTheme + ".jsonc")
+		THEMES_DIR + config.CurrentTheme + "/" + config.CurrentTheme + ".jsonc", true)
 
 	config.Blur = themeConfig.Blur
 	config.Spacing = themeConfig.Spacing
@@ -78,6 +81,19 @@ func main() {
 func buildApp(orientation gtk.Orientation) {
 	app, _ = gtk.BoxNew(orientation, 0)
 	app.SetName("app")
+
+
+	strMargin := strconv.Itoa(config.Margin)
+	css := "#app {margin-"+config.Position+": "+strMargin+"px;}"
+
+	marginProvider, _ := gtk.CssProviderNew()
+	appStyleContext, _ := app.GetStyleContext()
+	
+	appStyleContext.AddProvider(
+		marginProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+	marginProvider.LoadFromData(css)
+
 
 	itemsBox, _ = gtk.BoxNew(orientation, config.Spacing)
 	itemsBox.SetName("items-box")
@@ -123,6 +139,10 @@ func renderItems(itemsBox *gtk.Box) {
 			}()
 		})
 
+		btns[item].Connect("enter-notify-event", func() {
+			isCancelHide = 1
+		})
+
 		itemsBox.Add(btns[item])
 	}
 }
@@ -145,9 +165,9 @@ func addCssProvider(cssFile string) error {
 }
 
 func setWindowProperty(window *gtk.Window) gtk.Orientation {
-	AppOreintation := gtk.ORIENTATION_VERTICAL
+	AppOreintation := gtk.ORIENTATION_HORIZONTAL
 	Layer := layershell.LAYER_SHELL_LAYER_BOTTOM
-	Edge := layershell.LAYER_SHELL_EDGE_LEFT
+	Edge := layershell.LAYER_SHELL_EDGE_BOTTOM
 
 	switch config.Layer {
 	case "background":
@@ -163,14 +183,14 @@ func setWindowProperty(window *gtk.Window) gtk.Orientation {
 	switch config.Position {
 	case "left":
 		Edge = layershell.LAYER_SHELL_EDGE_LEFT
+		AppOreintation = gtk.ORIENTATION_VERTICAL
 	case "bottom":
 		Edge = layershell.LAYER_SHELL_EDGE_BOTTOM
-		AppOreintation = gtk.ORIENTATION_HORIZONTAL
 	case "right":
 		Edge = layershell.LAYER_SHELL_EDGE_RIGHT
+		AppOreintation = gtk.ORIENTATION_VERTICAL
 	case "top":
 		Edge = layershell.LAYER_SHELL_EDGE_TOP
-		AppOreintation = gtk.ORIENTATION_HORIZONTAL
 	}
 
 	layershell.InitForWindow(window)
@@ -205,7 +225,8 @@ func autoLayer() {
 	window.Connect("leave-notify-event", func(window *gtk.Window, e *gdk.Event) {
 		event := gdk.EventCrossingNewFromEvent(e)
 		isInWindow := event.Detail() == 3 || event.Detail() == 4
-		
+		isCancelHide = 0
+
 		if isInWindow {
 			go func() {
 				time.Sleep(time.Second / 3) 
@@ -218,8 +239,12 @@ func autoLayer() {
 func setLayer(layer string) {
 	switch layer {
 	case "top":
+		isCancelHide = 1
 		layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_TOP)
 	case "bottom":
-		layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_BOTTOM)
+		if isCancelHide == 0 {
+			layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_BOTTOM)
+		}
+		isCancelHide = 0
 	}
 }

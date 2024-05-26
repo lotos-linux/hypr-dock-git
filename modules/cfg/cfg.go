@@ -16,9 +16,9 @@ type Config struct {
 	IconSize   		int
 	Layer     		string
 	Position		string
-	Blur			bool
+	Blur			string
 	Spacing			int
-	Priority		string		
+	Margin			int
 }
 
 func GetDefaultConfig() Config {
@@ -28,13 +28,15 @@ func GetDefaultConfig() Config {
 	config.IconSize = 21
 	config.Layer = "auto"
 	config.Position = "bottom"
-	config.Blur = true
+	config.Blur = "on"
 	config.Spacing = 8
+	config.Margin = 8
 
 	return config
 }
 
-func ConnectConfig(jsoncFile string) Config {
+func ConnectConfig(jsoncFile string, isTheme bool) Config {
+	// Read jsonc
 	file, err := os.Open(jsoncFile)
 	if err != nil {
 		fmt.Println("Config file not found!\n", err, "\nLoad default config")
@@ -50,6 +52,40 @@ func ConnectConfig(jsoncFile string) Config {
 	if err = json.Unmarshal(res, &config); err != nil {
 		fmt.Println("Config is incorrect!\n", err, "\nLoad default config")
 		return GetDefaultConfig()
+	}
+
+
+	// Set default values ​​if not specified
+	if config.CurrentTheme == "" && !isTheme{
+		config.CurrentTheme = GetDefaultConfig().CurrentTheme
+		fmt.Println("The theme is not set, the default theme is currently used - \"lotos\"")
+	}
+
+	if config.Layer == "" {
+		config.Layer = GetDefaultConfig().CurrentTheme
+	}
+
+	isCorrect := config.Position == "left" || config.Position == "right"
+	isCorrect2 := config.Position == "top" || config.Position == "bottom"
+	isCorrect3 := isCorrect || isCorrect2
+
+	if config.Position == "" || !isCorrect3 {
+		if !isTheme {
+			fmt.Println("Position incorrect or empty\nDefault position set")
+		}
+		config.Position = GetDefaultConfig().Position
+	}
+
+	if config.Spacing == 0 {
+		config.Spacing = GetDefaultConfig().Spacing
+	}
+
+	if config.IconSize == 0 {
+		config.IconSize = GetDefaultConfig().IconSize
+	}
+
+	if config.Blur == "" {
+		config.Blur = GetDefaultConfig().Blur
 	}
 
 	return config

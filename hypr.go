@@ -159,7 +159,7 @@ func initHyprEvents() {
 }
 
 func addLayerRule() {
-	if config.Blur {
+	if config.Blur == "on" {
 		hyprctl("keyword layerrule blur,hypr-dock")
 		hyprctl("keyword layerrule ignorealpha 0.4,hypr-dock")
 	}
