@@ -8,7 +8,7 @@
     "Layer": "auto",
 
     // Window position on screen (top, bottom, left, right) (default "bottom")
-    "Position": "bottoms",
+    "Position": "bottom",
 
     "Margin": 8
 }
