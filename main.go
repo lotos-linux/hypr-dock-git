@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"flag"
 	"time"
+	"slices"
 	"strconv"
 	"hypr-dock/modules/cfg"
 	"github.com/dlasky/gotk3-layershell/layershell"
@@ -13,16 +14,18 @@ import (
 	// "github.com/gotk3/gotk3/glib"
 )
 
-const version = "0.0.2-1-dev"
+const version = "0.0.2-2-dev"
 
 // Only during development
 const CONFIG_DIR = "./configs/"
 const THEMES_DIR = CONFIG_DIR + "themes/"
 const MAIN_CONFIG = CONFIG_DIR + "config.jsonc"
-const ITEMS_CONFIG = CONFIG_DIR + "items.json"
+const ITEMS_CONFIG = CONFIG_DIR + "pinned.json"
 
 var config cfg.Config
-var itemList cfg.ItemList
+var pinnedApps []string
+var addedItems []string
+var addedWidget = make(map[string]*gtk.Button)
 
 var err error
 
@@ -36,7 +39,7 @@ func initSettings() {
 	configFile := flag.String("config", MAIN_CONFIG, "config file")
 
 	config = cfg.ConnectConfig(*configFile, false)
-	itemList = cfg.ReadItemList(ITEMS_CONFIG)
+	pinnedApps = cfg.ReadItemList(ITEMS_CONFIG)
 
 	currentTheme := flag.String("theme", config.CurrentTheme, "theme")
 	config.CurrentTheme = *currentTheme
@@ -112,39 +115,49 @@ func buildApp(orientation gtk.Orientation) {
 }
 
 func renderItems(itemsBox *gtk.Box) {
-	iconTheme, err := gtk.IconThemeGetDefault()
-	if err != nil {
-		fmt.Println("Unable to icon theme:", err)
-	}
+	listClients()
 
-	for item := range len(itemList.List) {
-		pixbuf, err := iconTheme.LoadIcon(
-			itemList.List[item]["icon"], config.IconSize, 
-			gtk.ICON_LOOKUP_FORCE_SIZE)
-		if err != nil {
-			fmt.Println(err)
-			return
+	fmt.Println(pinnedApps)
+
+	for item := range len(pinnedApps) {
+		addItem(pinnedApps[item])
+		addedItems = append(addedItems, pinnedApps[item])
+	}
+	
+	for item := range len(clients) {
+		if !slices.Contains(addedItems, clients[item].Class) {
+			addItem(clients[item].Class)
+			addedItems = append(addedItems, clients[item].Class)
 		}
-
-		btns := map[int]*gtk.Button{}
-		btns[item], _ = gtk.ButtonNew()
-
-		imgs := map[int]*gtk.Image{}
-		imgs[item], _ = gtk.ImageNewFromPixbuf(pixbuf)
-		btns[item].SetImage(imgs[item])
-
-		btns[item].Connect("clicked", func() {
-			go func() {
-
-			}()
-		})
-
-		btns[item].Connect("enter-notify-event", func() {
-			isCancelHide = 1
-		})
-
-		itemsBox.Add(btns[item])
 	}
+
+	// fmt.Println(addedItems)
+	// fmt.Println(addedWidget)
+
+}
+
+
+
+func addItem(className string) {
+	itemProp, err := getClientData(className)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	item, _ := gtk.ButtonNew()
+	image := createImage(itemProp.Icon)
+
+	item.SetImage(image)
+	item.SetName(className)
+	item.SetTooltipText(itemProp.Name)
+	addedWidget[className] = item
+
+	item.Connect("enter-notify-event", func() {
+		isCancelHide = 1
+	})
+
+	itemsBox.Add(item)
+	window.ShowAll()
 }
 
 func addCssProvider(cssFile string) error {
@@ -164,10 +177,12 @@ func addCssProvider(cssFile string) error {
 	return err
 }
 
+var Edge = layershell.LAYER_SHELL_EDGE_BOTTOM
+
 func setWindowProperty(window *gtk.Window) gtk.Orientation {
 	AppOreintation := gtk.ORIENTATION_HORIZONTAL
 	Layer := layershell.LAYER_SHELL_LAYER_BOTTOM
-	Edge := layershell.LAYER_SHELL_EDGE_BOTTOM
+	Edge = layershell.LAYER_SHELL_EDGE_BOTTOM
 
 	switch config.Layer {
 	case "background":

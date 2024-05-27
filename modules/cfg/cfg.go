@@ -93,10 +93,10 @@ func ConnectConfig(jsoncFile string, isTheme bool) Config {
 
 
 type ItemList struct {
-	List			[]map[string]string
+	Pinned			[]string
 }
 
-func ReadItemList(jsonFile string) ItemList {
+func ReadItemList(jsonFile string) []string {
 	file, _ := os.Open(jsonFile)
 	defer file.Close()
 
@@ -108,5 +108,5 @@ func ReadItemList(jsonFile string) ItemList {
 	  fmt.Println("error: ", err)
 	}
 	
-	return itemList
+	return itemList.Pinned
 }

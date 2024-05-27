@@ -7,6 +7,7 @@ import (
 	"strings"
 	"path/filepath"
 	"github.com/goccy/go-json"
+	// "github.com/dlasky/gotk3-layershell/layershell"
 )
 
 type workspace struct {
@@ -154,6 +155,17 @@ func initHyprEvents() {
 
 		if strings.Contains(hyprEvent, "configreloaded") {
 			addLayerRule()
+		}
+
+		if strings.Contains(hyprEvent, "activespecial>>") {
+			specialData := strings.TrimSpace(strings.Split(hyprEvent, "activespecial>>")[1])
+			specialDataArr := strings.Split(specialData, ",")
+			if specialDataArr[0] == "special:special" {
+				// fmt.Println("Open")
+			}
+			if specialDataArr[0] != "special:special" {
+				// fmt.Println("Close")
+			}
 		}
 	}
 }
