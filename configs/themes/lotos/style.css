@@ -5,12 +5,10 @@ window {
 #app {
   background-color: rgba(42, 41, 49, 0.59);
   border-radius: 12px;
-  /* margin-bottom: 8px; */
   padding: 5px;
 }
 
 button {
   background-color: transparent;
-  margin-bottom: 2px;
   padding: 4px;
 }

@@ -84,7 +84,7 @@ func loadTextFile(path string) ([]string, error) {
 	return output, nil
 }
 
-func createImage(source string) *gtk.Image {
+func createImage(source string, size int) *gtk.Image {
 	iconTheme, err := gtk.IconThemeGetDefault()
 	if err != nil {
 		fmt.Println("Unable to icon theme:", err)
@@ -93,11 +93,11 @@ func createImage(source string) *gtk.Image {
 	// Create image in file
 	if strings.Contains(source, "/") {
 		pixbuf, err := gdk.PixbufNewFromFileAtSize(
-			source, config.IconSize, config.IconSize)
+			source, size, size)
 		if err != nil {
 			fmt.Println(err)
 			pixbuf, _ = iconTheme.LoadIcon(
-				"steam", config.IconSize, gtk.ICON_LOOKUP_FORCE_SIZE)
+				"steam", size, gtk.ICON_LOOKUP_FORCE_SIZE)
 			
 		}
 

@@ -7,7 +7,7 @@ import (
 	"time"
 	"slices"
 	"strconv"
-	"hypr-dock/modules/cfg"
+	"hypr-dock/cfg"
 	"github.com/dlasky/gotk3-layershell/layershell"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
@@ -25,7 +25,8 @@ const ITEMS_CONFIG = CONFIG_DIR + "pinned.json"
 var config cfg.Config
 var pinnedApps []string
 var addedItems []string
-var addedWidget = make(map[string]*gtk.Button)
+var addedImage = make(map[string]*gtk.Image)
+var addedBoxes = make(map[string]*gtk.Box)
 
 var err error
 
@@ -117,20 +118,42 @@ func buildApp(orientation gtk.Orientation) {
 func renderItems(itemsBox *gtk.Box) {
 	listClients()
 
-	fmt.Println(pinnedApps)
-
 	for item := range len(pinnedApps) {
 		addItem(pinnedApps[item])
 		addedItems = append(addedItems, pinnedApps[item])
 	}
 	
 	for item := range len(clients) {
-		if !slices.Contains(addedItems, clients[item].Class) {
-			addItem(clients[item].Class)
-			addedItems = append(addedItems, clients[item].Class)
+		className := clients[item].Class
+		if !slices.Contains(addedItems, className) {
+			addItem(className)
+			addedItems = append(addedItems, className)
+		} else {
+			box := addedBoxes[className]
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			addedImage[className].Destroy()
+
+			var newImage *gtk.Image
+			imageName, _ := addedImage[className].GetName()
+			if imageName == "empty" {
+				newImage = createImage(
+					THEMES_DIR + config.CurrentTheme + "/single.svg", config.IconSize - 10)
+				newImage.SetName("single")
+			} else {
+				newImage = createImage(
+					THEMES_DIR + config.CurrentTheme + "/multiple.svg", config.IconSize - 10)
+				newImage.SetName("multiple")
+			}
+
+			addedImage[className] = newImage
+
+			box.Add(newImage)
+			window.ShowAll()
 		}
 	}
-
 	// fmt.Println(addedItems)
 	// fmt.Println(addedWidget)
 
@@ -144,17 +167,31 @@ func addItem(className string) {
 		fmt.Println(err)
 	}
 
-	item, _ := gtk.ButtonNew()
-	image := createImage(itemProp.Icon)
+	item, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
 
-	item.SetImage(image)
-	item.SetName(className)
-	item.SetTooltipText(itemProp.Name)
-	addedWidget[className] = item
+	button, _ := gtk.ButtonNew()
+	image := createImage(itemProp.Icon, config.IconSize)
 
-	item.Connect("enter-notify-event", func() {
+	button.SetImage(image)
+	button.SetName(className)
+	button.SetTooltipText(itemProp.Name)
+
+	indicatorBox, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+	indicatorImage := createImage(
+		THEMES_DIR + config.CurrentTheme + "/empty.svg", config.IconSize - 10)
+	indicatorImage.SetName("empty")
+
+	indicatorBox.Add(indicatorImage)
+
+	button.Connect("enter-notify-event", func() {
 		isCancelHide = 1
 	})
+
+	addedImage[className] = indicatorImage
+	addedBoxes[className] = indicatorBox
+
+	item.Add(button)
+	item.Add(indicatorBox)
 
 	itemsBox.Add(item)
 	window.ShowAll()
