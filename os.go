@@ -38,10 +38,11 @@ func searchDesktopFile(className string) string{
 		return appDir + desktopFile
 	}
 
+	// If file non found
 	files, _ := os.ReadDir(appDir)
 	for _, file := range files {
 		fileName := file.Name()
-		
+
 		// "krita" > "org.kde.krita.desktop" / "lutris" > "net.lutris.Lutris.desktop"
 		if strings.Count(fileName, ".") > 1 && strings.Contains(fileName, className) {
 			return appDir + fileName
