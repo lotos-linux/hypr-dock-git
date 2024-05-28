@@ -13,17 +13,17 @@ import (
 var app *gtk.Box
 var itemsBox *gtk.Box
 var isCancelHide int
-
 var pinnedApps []string
-var addedItems []string
 
-type buttonList struct {
-	IndicatorImage		*gtk.Image
+type appData struct {
+	Instances			int
+	Windows				[]map[string]string
+	DesktopData			desktopData
 	Button				*gtk.Button
 	ButtonBox			*gtk.Box
-	ClientData			clientData
+	IndicatorImage		*gtk.Image
 }
-var addedWidget = make(map[string]*buttonList)
+var addedApps = make(map[string]*appData)
 
 func buildApp(orientation gtk.Orientation) {
 	app, _ = gtk.BoxNew(orientation, 0)
@@ -59,76 +59,31 @@ func buildApp(orientation gtk.Orientation) {
 }
 
 func renderItems(itemsBox *gtk.Box) {
-
 	listClients()
 
-	for item := range len(pinnedApps) {
-		addItem(pinnedApps[item])
-		addedItems = append(addedItems, pinnedApps[item])
+	// Render of pinned apps
+	for _, className := range pinnedApps {
+		addItem(className)
 	}
 	
-	for item := range len(clients) {
-		className := clients[item].Class
-		if !slices.Contains(addedItems, className) {
-			addItem(className)
-			addIndicator(className)
-			addedItems = append(addedItems, className)
-		} else {
-			addIndicator(className)
-		}
+	// Render of running apps
+	for _, ipcClient := range clients {
+		addApp(ipcClient)
 	}
 }
 
-func addIndicator(className string) {
-	widget := addedWidget[className]
-	mainBox := widget.ButtonBox
-
-	itemProp := widget.ClientData
-
-	widget.IndicatorImage.Destroy()
-	widget.Button.Destroy()
-
-	newButton, _ := gtk.ButtonNew()
-	image := createImage(itemProp.Icon, config.IconSize)
-
-	newButton.SetImage(image)
-	newButton.SetName(className)
-	newButton.SetTooltipText(itemProp.Name)
-
-	var newImage *gtk.Image
-	imageName, _ := widget.IndicatorImage.GetName()
-	if imageName == "empty" {
-		newImage = createImage(
-			THEMES_DIR + config.CurrentTheme + "/single.svg", config.IconSize - 10)
-		newImage.SetName("single")
-
-		newButton.Connect("clicked", func() {
-			fmt.Println(itemProp.Exec)
-		})
-
+func addApp(ipcClient client) {
+	className := ipcClient.Class
+	if !slices.Contains(pinnedApps, className) {
+		addItem(className)
+		addIndicator(className, ipcClient)
 	} else {
-		newImage = createImage(
-			THEMES_DIR + config.CurrentTheme + "/multiple.svg", config.IconSize - 10)
-		newImage.SetName("multiple")
-
-		newButton.Connect("clicked", func() {
-			fmt.Println(itemProp.Exec)
-		})
+		addIndicator(className, ipcClient)
 	}
-
-	addedWidget[className].IndicatorImage = newImage
-	addedWidget[className].Button = newButton
-
-	cancelHide(newButton)
-
-	mainBox.Add(newButton)
-	mainBox.Add(newImage)
-	window.ShowAll()
 }
-
 
 func addItem(className string) {
-	itemProp, err := getClientData(className)
+	itemProp, err := getDesktopData(className)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -152,17 +107,75 @@ func addItem(className string) {
 		launch(itemProp.Exec)
 	})
 
-	addedWidget[className] = &buttonList{
+	addedApps[className] = &appData{
 		IndicatorImage: indicatorImage,
 		Button: button,
 		ButtonBox: item,
-		ClientData: itemProp,
+		DesktopData: itemProp,
+		Instances: 0,
 	}
 
 	item.Add(button)
 	item.Add(indicatorImage)
 
 	itemsBox.Add(item)
+	window.ShowAll()
+}
+
+func addIndicator(className string, ipcClient client) {
+	thisApp := addedApps[className]
+	mainBox := thisApp.ButtonBox
+
+	itemProp := thisApp.DesktopData
+
+	appWindow := make(map[string]string)
+	appWindow["Address"] = ipcClient.Address
+	appWindow["Title"] = ipcClient.Title
+
+	addedApps[className].Instances += 1 
+	addedApps[className].Windows = append(
+		addedApps[className].Windows, appWindow)
+
+
+	thisApp.IndicatorImage.Destroy()
+	thisApp.Button.Destroy()
+
+	newButton, _ := gtk.ButtonNew()
+	image := createImage(itemProp.Icon, config.IconSize)
+
+	newButton.SetImage(image)
+	newButton.SetName(className)
+	newButton.SetTooltipText(itemProp.Name)
+	// newButton.SetTooltipText(appWindow["Title"])
+
+	var newImage *gtk.Image
+	if thisApp.Instances == 1 {
+		newImage = createImage(
+			THEMES_DIR + config.CurrentTheme + "/single.svg", config.IconSize - 10)
+
+		newButton.Connect("clicked", func() {
+			fmt.Println(thisApp.Instances, thisApp.Windows)
+			hyprctl("dispatch focuswindow address:" + ipcClient.Address)
+		})
+
+	} else {
+		newImage = createImage(
+			THEMES_DIR + config.CurrentTheme + "/multiple.svg", config.IconSize - 10)
+
+		newButton.Connect("clicked", func() {
+			fmt.Println(thisApp.Instances, thisApp.Windows)
+			hyprctl(
+				"dispatch focuswindow address:" + ipcClient.Address)
+		})
+	}
+
+	addedApps[className].IndicatorImage = newImage
+	addedApps[className].Button = newButton
+
+	cancelHide(newButton)
+
+	mainBox.Add(newButton)
+	mainBox.Add(newImage)
 	window.ShowAll()
 }
 
@@ -185,7 +198,7 @@ func createImage(source string, size int) *gtk.Image {
 		if err != nil {
 			fmt.Println(err)
 			pixbuf, _ = iconTheme.LoadIcon(
-				"steam", size, gtk.ICON_LOOKUP_FORCE_SIZE)
+				"cancel", size, gtk.ICON_LOOKUP_FORCE_SIZE)
 			
 		}
 
@@ -198,7 +211,7 @@ func createImage(source string, size int) *gtk.Image {
 
 	// Create image in icon name
 	pixbuf, err := iconTheme.LoadIcon(
-		source, config.IconSize, gtk.ICON_LOOKUP_FORCE_SIZE)
+		source, size, gtk.ICON_LOOKUP_FORCE_SIZE)
 	if err != nil {
 		fmt.Println(err)
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"errors"
 	"path/filepath"
 	"github.com/goccy/go-json"
 	// "github.com/dlasky/gotk3-layershell/layershell"
@@ -90,6 +91,8 @@ var unixSock2Adress = &net.UnixAddr {
 	Net:  "unix",
 }
 
+var special = false
+
 func hyprctl(cmd string) ([]byte, error) {
 	conn, err := net.Dial("unix", unixSockAdress)
 	if err != nil {
@@ -157,17 +160,43 @@ func initHyprEvents() {
 			addLayerRule()
 		}
 
+		if strings.Contains(hyprEvent, "openwindow>>") {
+			windowData := strings.TrimSpace(strings.Split(hyprEvent, ">>")[1])
+			windowAddress := "0x" + strings.Split(windowData, ",")[0]
+			windowClient, err := searchClientByAddress(windowAddress)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				addApp(windowClient)
+			}
+		}
+
 		if strings.Contains(hyprEvent, "activespecial>>") {
 			specialData := strings.TrimSpace(strings.Split(hyprEvent, "activespecial>>")[1])
 			specialDataArr := strings.Split(specialData, ",")
 			if specialDataArr[0] == "special:special" {
 				// fmt.Println("Open")
+				special = true
 			}
 			if specialDataArr[0] != "special:special" {
 				// fmt.Println("Close")
+				special = false
 			}
 		}
 	}
+}
+
+func searchClientByAddress(address string) (client, error) {
+	listClients()
+
+	for _, ipcClient := range clients {
+		if ipcClient.Address == address {
+			return ipcClient, nil
+		}
+	}
+
+	err := errors.New("Client non found by address: " + address)
+	return client{}, err
 }
 
 func addLayerRule() {

@@ -10,7 +10,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-const version = "0.0.2-4-dev"
+const version = "0.0.4-0-dev"
 
 // Only during development
 const CONFIG_DIR = "./configs"
@@ -21,6 +21,9 @@ const ITEMS_CONFIG = CONFIG_DIR + "/pinned.json"
 var err error
 var config cfg.Config
 var window *gtk.Window
+var detectArea *gtk.Window
+
+var orientation gtk.Orientation
 
 func initSettings() {
 	configFile := flag.String("config", MAIN_CONFIG, "config file")
@@ -65,7 +68,39 @@ func main() {
 	window.Add(app)
 	window.Connect("destroy", func() {gtk.MainQuit()})
 	window.ShowAll()
+	if config.Layer == "auto" {initDetectArea()}
 	gtk.Main()
+}
+
+func initDetectArea() {
+	detectArea, _ = gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	detectArea.SetName("detect")
+
+	layershell.InitForWindow(detectArea)
+	layershell.SetNamespace(detectArea, "dock-detect")
+	layershell.SetAnchor(detectArea, Edge, true)
+	layershell.SetMargin(detectArea, Edge, 0)
+	layershell.SetLayer(detectArea, layershell.LAYER_SHELL_LAYER_TOP)
+
+	switch orientation {
+	case gtk.ORIENTATION_HORIZONTAL:
+		detectArea.SetSizeRequest(config.IconSize * len(addedApps) * 2 - 20, 1)
+	case gtk.ORIENTATION_VERTICAL:
+		detectArea.SetSizeRequest(1, config.IconSize * len(addedApps) * 2 - 20)
+	}
+
+	detectArea.Connect("enter-notify-event", func(window *gtk.Window, e *gdk.Event) {
+		event := gdk.EventCrossingNewFromEvent(e)
+		isInWindow := event.Detail() == 3 || event.Detail() == 4 || true
+
+		if isInWindow {
+			go func() {
+				setLayer("top")
+			}()
+		}
+	})
+
+	detectArea.ShowAll()
 }
 
 func addCssProvider(cssFile string) error {
@@ -138,7 +173,7 @@ func autoLayer() {
 		event := gdk.EventCrossingNewFromEvent(e)
 		isInWindow := event.Detail() == 3 || event.Detail() == 4 || true
 
-		if isInWindow {
+		if isInWindow && !special {
 			go func() {
 				setLayer("top")
 			}()

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-type clientData struct {
+type desktopData struct {
 	Name 	string
 	Icon	string
 	Exec	string
@@ -15,16 +15,16 @@ type clientData struct {
 
 const appDir = "/usr/share/applications/"
 
-func getClientData(className string) (clientData, error) {
+func getDesktopData(className string) (desktopData, error) {
 	allData, err := loadTextFile(searchDesktopFile(className))
 	if err != nil {
-		return clientData{}, err
+		return desktopData{}, err
 	}
 
-	data := clientData{
-		Name: getClientOption(allData, "Name"),
-		Icon: getClientOption(allData, "Icon"),
-		Exec: getClientOption(allData, "Exec"),
+	data := desktopData{
+		Name: getDesktopOption(allData, "Name"),
+		Icon: getDesktopOption(allData, "Icon"),
+		Exec: getDesktopOption(allData, "Exec"),
 	}
 
 	return data, nil
@@ -55,7 +55,7 @@ func searchDesktopFile(className string) string{
 	return ""
 }
 
-func getClientOption(allData []string, option string) string {
+func getDesktopOption(allData []string, option string) string {
 	for lineIndex := range len(allData) {
 		line := allData[lineIndex]
 		if strings.HasPrefix(line, option + "=") {
@@ -128,8 +128,8 @@ func launch(command string) {
 		cmd.Env = append(cmd.Env, envVars...)
 	}
 
-	// msg := fmt.Sprintf("env vars: %s; command: '%s'; args: %s\n", envVars, elements[cmdIdx], args)
-	// fmt.Println(msg)
+	msg := fmt.Sprintf("env vars: %s; command: '%s'; args: %s\n", envVars, elements[cmdIdx], args)
+	fmt.Println(msg)
 
 	if err := cmd.Start(); err != nil {
 		fmt.Println("Unable to launch command!", err.Error())
