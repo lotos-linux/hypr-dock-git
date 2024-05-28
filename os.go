@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
-	"github.com/gotk3/gotk3/gtk"
-	"github.com/gotk3/gotk3/gdk"
 )
 
 type clientData struct {
@@ -83,45 +81,6 @@ func loadTextFile(path string) ([]string, error) {
 
 	}
 	return output, nil
-}
-
-func createImage(source string, size int) *gtk.Image {
-	iconTheme, err := gtk.IconThemeGetDefault()
-	if err != nil {
-		fmt.Println("Unable to icon theme:", err)
-	}
-
-	// Create image in file
-	if strings.Contains(source, "/") {
-		pixbuf, err := gdk.PixbufNewFromFileAtSize(
-			source, size, size)
-		if err != nil {
-			fmt.Println(err)
-			pixbuf, _ = iconTheme.LoadIcon(
-				"steam", size, gtk.ICON_LOOKUP_FORCE_SIZE)
-			
-		}
-
-		image, err := gtk.ImageNewFromPixbuf(pixbuf)
-		if err != nil {
-			fmt.Println(err)
-		}
-		return image
-	}
-
-	// Create image in icon name
-	pixbuf, err := iconTheme.LoadIcon(
-		source, config.IconSize, gtk.ICON_LOOKUP_FORCE_SIZE)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	image, err := gtk.ImageNewFromPixbuf(pixbuf)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	return image
 }
 
 func launch(command string) {
