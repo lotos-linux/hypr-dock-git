@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"fmt"
+	"os/exec"
 	"strings"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/gotk3/gotk3/gdk"
@@ -59,8 +60,8 @@ func searchDesktopFile(className string) string{
 func getClientOption(allData []string, option string) string {
 	for lineIndex := range len(allData) {
 		line := allData[lineIndex]
-		if strings.Contains(line, option + "=") {
-			optionValue := strings.TrimPrefix(line, option + "=")
+		if strings.HasPrefix(line, option + "=") {
+			optionValue := strings.Split(line, "=")[1]
 			return optionValue
 		}
 	}
@@ -121,4 +122,57 @@ func createImage(source string, size int) *gtk.Image {
 	}
 
 	return image
+}
+
+func launch(command string) {
+	if strings.Contains(command, "\"") {
+		command = strings.ReplaceAll(command, "\"", "")
+	}
+
+	badArg := strings.Index(command, "%")
+	if badArg != -1 {
+		command = command[:badArg-1]
+	}
+
+	elements := strings.Split(command, " ")
+
+	// find prepended env variables, if any
+	envVarsNum := strings.Count(command, "=")
+	var envVars []string
+
+	cmdIdx := -1
+
+	if envVarsNum > 0 {
+		for idx, item := range elements {
+			if strings.Contains(item, "=") {
+				envVars = append(envVars, item)
+			} else if !strings.HasPrefix(item, "-") && cmdIdx == -1 {
+				cmdIdx = idx
+			}
+		}
+	}
+	if cmdIdx == -1 {
+		cmdIdx = 0
+	}
+	var args []string
+	for _, arg := range elements[1+cmdIdx:] {
+		if !strings.Contains(arg, "=") {
+			args = append(args, arg)
+		}
+	}
+
+	cmd := exec.Command(elements[cmdIdx], elements[1+cmdIdx:]...)
+
+	// set env variables
+	if len(envVars) > 0 {
+		cmd.Env = os.Environ()
+		cmd.Env = append(cmd.Env, envVars...)
+	}
+
+	// msg := fmt.Sprintf("env vars: %s; command: '%s'; args: %s\n", envVars, elements[cmdIdx], args)
+	// fmt.Println(msg)
+
+	if err := cmd.Start(); err != nil {
+		fmt.Println("Unable to launch command!", err.Error())
+	}
 }
