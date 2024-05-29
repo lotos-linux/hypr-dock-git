@@ -10,7 +10,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-const version = "0.0.4-0-dev"
+const version = "0.0.4-8-dev"
 
 // Only during development
 const CONFIG_DIR = "./configs"
@@ -45,7 +45,6 @@ func initSettings() {
 
 func main() {
 	initSettings()
-	go initHyprEvents()
 
 	gtk.Init(nil)
 
@@ -69,6 +68,7 @@ func main() {
 	window.Connect("destroy", func() {gtk.MainQuit()})
 	window.ShowAll()
 	if config.Layer == "auto" {initDetectArea()}
+	go initHyprEvents()
 	gtk.Main()
 }
 
@@ -93,6 +93,7 @@ func initDetectArea() {
 		event := gdk.EventCrossingNewFromEvent(e)
 		isInWindow := event.Detail() == 3 || event.Detail() == 4 || true
 
+		isCancelHide = 1
 		if isInWindow {
 			go func() {
 				setLayer("top")
@@ -173,6 +174,7 @@ func autoLayer() {
 		event := gdk.EventCrossingNewFromEvent(e)
 		isInWindow := event.Detail() == 3 || event.Detail() == 4 || true
 
+		isCancelHide = 1
 		if isInWindow && !special {
 			go func() {
 				setLayer("top")
@@ -197,7 +199,6 @@ func autoLayer() {
 func setLayer(layer string) {
 	switch layer {
 	case "top":
-		isCancelHide = 1
 		layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_TOP)
 	case "bottom":
 		if isCancelHide == 0 {

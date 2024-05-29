@@ -152,7 +152,8 @@ func initHyprEvents() {
 	defer unixConnect.Close()
 	for {
 		bufer := make([]byte, 10240)
-		unixNumber, _ := unixConnect.Read(bufer)
+		unixNumber, err := unixConnect.Read(bufer)
+		if err != nil {fmt.Println(err)}
 		hyprEvent := string(bufer[:unixNumber])
 		// fmt.Println(hyprEvent) 
 
@@ -161,25 +162,33 @@ func initHyprEvents() {
 		}
 
 		if strings.Contains(hyprEvent, "openwindow>>") {
-			windowData := strings.TrimSpace(strings.Split(hyprEvent, ">>")[1])
+			windowData := strings.TrimSpace(strings.Split(hyprEvent, "openwindow>>")[1])
 			windowAddress := "0x" + strings.Split(windowData, ",")[0]
 			windowClient, err := searchClientByAddress(windowAddress)
 			if err != nil {
 				fmt.Println(err)
 			} else {
-				addApp(windowClient)
+				go addApp(windowClient)
 			}
 		}
 
+		if strings.Contains(hyprEvent, "closewindow>>") {
+			windowData := strings.TrimSpace(strings.Split(hyprEvent, "closewindow>>")[1])
+			windowAddress := "0x" + strings.Split(windowData, ",")[0]
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				go removeApp(windowAddress)
+			}
+		}
+	
 		if strings.Contains(hyprEvent, "activespecial>>") {
-			specialData := strings.TrimSpace(strings.Split(hyprEvent, "activespecial>>")[1])
+			specialData := strings.TrimSpace(strings.Split(hyprEvent, ">>")[1])
 			specialDataArr := strings.Split(specialData, ",")
 			if specialDataArr[0] == "special:special" {
-				// fmt.Println("Open")
 				special = true
 			}
 			if specialDataArr[0] != "special:special" {
-				// fmt.Println("Close")
 				special = false
 			}
 		}

@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 	"strconv"
+	"errors"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 	// "github.com/gotk3/gotk3/glib"
@@ -19,6 +20,7 @@ type appData struct {
 	Instances			int
 	Windows				[]map[string]string
 	DesktopData			desktopData
+	ClassName			string
 	Button				*gtk.Button
 	ButtonBox			*gtk.Box
 	IndicatorImage		*gtk.Image
@@ -43,7 +45,7 @@ func buildApp(orientation gtk.Orientation) {
 
 
 	itemsBox, _ = gtk.BoxNew(orientation, config.Spacing)
-	itemsBox.SetName("items-box")
+	itemsBox.SetName("items-box") 
 
 	switch orientation {
 	case gtk.ORIENTATION_HORIZONTAL:
@@ -68,18 +70,76 @@ func renderItems(itemsBox *gtk.Box) {
 	
 	// Render of running apps
 	for _, ipcClient := range clients {
-		addApp(ipcClient)
+		addApp(ipcClient) 
 	}
 }
 
 func addApp(ipcClient client) {
 	className := ipcClient.Class
-	if !slices.Contains(pinnedApps, className) {
+	_, added := addedApps[className]
+	if !slices.Contains(pinnedApps, className) && !added {
 		addItem(className)
 		addIndicator(className, ipcClient)
 	} else {
 		addIndicator(className, ipcClient)
 	}
+}
+
+func removeItem(className string) {
+	thisApp := addedApps[className]
+
+	thisApp.ButtonBox.Destroy()
+
+	window.ShowAll()
+}
+
+func removeApp(address string) {
+	thisApp, windowIndex, err := searhByAddress(address)
+	if err != nil {fmt.Println(err)}
+	className := thisApp.ClassName
+	fmt.Println(className)
+
+	listClients()
+
+	if thisApp.Instances == 1 && !slices.Contains(pinnedApps, className) {
+		removeItem(className)
+		delete(addedApps, className)
+		return
+	}
+
+	mainBox := thisApp.ButtonBox
+	thisApp.IndicatorImage.Destroy()
+
+	var newImage *gtk.Image
+	if thisApp.Instances == 1 && slices.Contains(pinnedApps, className) {
+		newImage = createImage(
+			THEMES_DIR + config.CurrentTheme + "/empty.svg", config.IconSize - 10)
+	}
+	
+	if thisApp.Instances == 2 {
+		newImage = createImage(
+			THEMES_DIR + config.CurrentTheme + "/single.svg", config.IconSize - 10)
+	}
+
+	if thisApp.Instances == 3 {
+		newImage = createImage(
+			THEMES_DIR + config.CurrentTheme + "/multiple.svg", config.IconSize - 10)
+	}
+
+	if thisApp.Instances > 3 {
+		newImage = createImage(
+			THEMES_DIR + config.CurrentTheme + "/3.svg", config.IconSize - 10)
+	}
+
+	mainBox.Add(newImage)
+
+	addedApps[className].Instances -= 1
+	fmt.Println(addedApps[className].Instances)
+	newWindows := removeFromSlice(addedApps[className].Windows, windowIndex)
+	addedApps[className].Windows = newWindows
+	addedApps[className].IndicatorImage = newImage
+	
+	window.ShowAll()
 }
 
 func addItem(className string) {
@@ -101,11 +161,6 @@ func addItem(className string) {
 
 	indicatorImage := createImage(
 		THEMES_DIR + config.CurrentTheme + "/empty.svg", config.IconSize - 10)
-	indicatorImage.SetName("empty")
-
-	button.Connect("clicked", func() {
-		launch(itemProp.Exec)
-	})
 
 	addedApps[className] = &appData{
 		IndicatorImage: indicatorImage,
@@ -113,7 +168,20 @@ func addItem(className string) {
 		ButtonBox: item,
 		DesktopData: itemProp,
 		Instances: 0,
+		ClassName: className,
 	}
+
+	button.Connect("clicked", func() {
+		if addedApps[className].Instances == 0 {
+			launch(itemProp.Exec)
+		}
+		if addedApps[className].Instances == 1 {
+			hyprctl("dispatch focuswindow address:" + addedApps[className].Windows[0]["Address"])
+		}
+		if addedApps[className].Instances > 1 {
+			fmt.Println("more")
+		}
+	})
 
 	item.Add(button)
 	item.Add(indicatorImage)
@@ -126,8 +194,6 @@ func addIndicator(className string, ipcClient client) {
 	thisApp := addedApps[className]
 	mainBox := thisApp.ButtonBox
 
-	itemProp := thisApp.DesktopData
-
 	appWindow := make(map[string]string)
 	appWindow["Address"] = ipcClient.Address
 	appWindow["Title"] = ipcClient.Title
@@ -137,44 +203,23 @@ func addIndicator(className string, ipcClient client) {
 		addedApps[className].Windows, appWindow)
 
 
+	fmt.Println(addedApps[className].Instances)
 	thisApp.IndicatorImage.Destroy()
-	thisApp.Button.Destroy()
-
-	newButton, _ := gtk.ButtonNew()
-	image := createImage(itemProp.Icon, config.IconSize)
-
-	newButton.SetImage(image)
-	newButton.SetName(className)
-	newButton.SetTooltipText(itemProp.Name)
-	// newButton.SetTooltipText(appWindow["Title"])
 
 	var newImage *gtk.Image
 	if thisApp.Instances == 1 {
 		newImage = createImage(
 			THEMES_DIR + config.CurrentTheme + "/single.svg", config.IconSize - 10)
 
-		newButton.Connect("clicked", func() {
-			fmt.Println(thisApp.Instances, thisApp.Windows)
-			hyprctl("dispatch focuswindow address:" + ipcClient.Address)
-		})
-
-	} else {
+	} else if thisApp.Instances == 2 {
 		newImage = createImage(
 			THEMES_DIR + config.CurrentTheme + "/multiple.svg", config.IconSize - 10)
-
-		newButton.Connect("clicked", func() {
-			fmt.Println(thisApp.Instances, thisApp.Windows)
-			hyprctl(
-				"dispatch focuswindow address:" + ipcClient.Address)
-		})
+	} else {
+		newImage = createImage(
+			THEMES_DIR + config.CurrentTheme + "/3.svg", config.IconSize - 10)
 	}
 
 	addedApps[className].IndicatorImage = newImage
-	addedApps[className].Button = newButton
-
-	cancelHide(newButton)
-
-	mainBox.Add(newButton)
 	mainBox.Add(newImage)
 	window.ShowAll()
 }
@@ -210,10 +255,13 @@ func createImage(source string, size int) *gtk.Image {
 	}
 
 	// Create image in icon name
+	fmt.Println(source)
 	pixbuf, err := iconTheme.LoadIcon(
 		source, size, gtk.ICON_LOOKUP_FORCE_SIZE)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(source, err)
+		pixbuf, _ = iconTheme.LoadIcon(
+			"cancel", size, gtk.ICON_LOOKUP_FORCE_SIZE)
 	}
 
 	image, err := gtk.ImageNewFromPixbuf(pixbuf)
@@ -222,4 +270,22 @@ func createImage(source string, size int) *gtk.Image {
 	}
 
 	return image
+}
+
+func removeFromSlice(slice []map[string]string, s int) []map[string]string {
+    return append(slice[:s], slice[s+1:]...)
+}
+
+func searhByAddress(address string) (*appData, int, error) {
+	for _, data := range addedApps {
+		for windowIndex, appWindow := range data.Windows {
+			if appWindow["Address"] == address {
+				return data, windowIndex, nil
+			}
+		}
+	}
+
+	err := errors.New("Window not found: " + address)
+
+	return nil, 0, err
 }
