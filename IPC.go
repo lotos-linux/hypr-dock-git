@@ -163,7 +163,8 @@ func initHyprEvents() {
 
 		if strings.Contains(hyprEvent, "openwindow>>") {
 			windowData := strings.TrimSpace(strings.Split(hyprEvent, "openwindow>>")[1])
-			windowAddress := "0x" + strings.Split(windowData, ",")[0]
+			windowAddressGrange := "0x" + strings.Split(windowData, ",")[0]
+			windowAddress := strings.Split(windowAddressGrange, "\n")[0]
 			windowClient, err := searchClientByAddress(windowAddress)
 			if err != nil {
 				fmt.Println(err)
@@ -174,12 +175,9 @@ func initHyprEvents() {
 
 		if strings.Contains(hyprEvent, "closewindow>>") {
 			windowData := strings.TrimSpace(strings.Split(hyprEvent, "closewindow>>")[1])
-			windowAddress := "0x" + strings.Split(windowData, ",")[0]
-			if err != nil {
-				fmt.Println(err)
-			} else {
-				go removeApp(windowAddress)
-			}
+			windowAddressGrange := "0x" + strings.Split(windowData, ",")[0]
+			windowAddress := strings.Split(windowAddressGrange, "\n")[0]
+			go removeApp(windowAddress)
 		}
 	
 		if strings.Contains(hyprEvent, "activespecial>>") {
