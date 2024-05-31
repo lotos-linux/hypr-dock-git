@@ -97,7 +97,6 @@ func removeApp(address string) {
 	thisApp, windowIndex, err := searhByAddress(address)
 	if err != nil {fmt.Println(err)}
 	className := thisApp.ClassName
-	fmt.Println(className)
 
 	listClients()
 
@@ -115,7 +114,7 @@ func removeApp(address string) {
 		newImage = createImage(
 			THEMES_DIR + config.CurrentTheme + "/empty.svg", config.IconSize - 10)
 	}
-	
+
 	if thisApp.Instances == 2 {
 		newImage = createImage(
 			THEMES_DIR + config.CurrentTheme + "/single.svg", config.IconSize - 10)
@@ -134,7 +133,6 @@ func removeApp(address string) {
 	mainBox.Add(newImage)
 
 	addedApps[className].Instances -= 1
-	fmt.Println(addedApps[className].Instances)
 	newWindows := removeFromSlice(addedApps[className].Windows, windowIndex)
 	addedApps[className].Windows = newWindows
 	addedApps[className].IndicatorImage = newImage
@@ -180,6 +178,8 @@ func addItem(className string) {
 		}
 		if addedApps[className].Instances > 1 {
 			fmt.Println("more")
+			menu := contextMenu(addedApps[className].Windows)
+			menu.PopupAtWidget(button, gdk.GDK_GRAVITY_NORTH, gdk.GDK_GRAVITY_SOUTH, nil)
 		}
 	})
 
@@ -203,7 +203,7 @@ func addIndicator(className string, ipcClient client) {
 		addedApps[className].Windows, appWindow)
 
 
-	fmt.Println(addedApps[className].Instances)
+	// fmt.Println(addedApps[className].Instances)
 	thisApp.IndicatorImage.Destroy()
 
 	var newImage *gtk.Image
@@ -222,6 +222,30 @@ func addIndicator(className string, ipcClient client) {
 	addedApps[className].IndicatorImage = newImage
 	mainBox.Add(newImage)
 	window.ShowAll()
+}
+
+func contextMenu(windows []map[string]string) *gtk.Menu {
+	menu, _ := gtk.MenuNew()
+
+	for _, window := range windows {
+		menuItem, _ := gtk.MenuItemNew()
+		hbox, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 6)
+		label, _ := gtk.LabelNew(window["Title"])
+		fmt.Println(window["Title"])
+
+		menuItem.Connect("activate", func() {
+			hyprctl("dispatch focuswindow address:" + window["Address"])
+		})
+
+
+		hbox.Add(label)
+		menuItem.Add(hbox)
+		menu.Append(menuItem)
+	}
+	menu.SetName("context-menu")
+	menu.ShowAll()
+
+	return menu
 }
 
 func cancelHide(button *gtk.Button) {
@@ -255,7 +279,7 @@ func createImage(source string, size int) *gtk.Image {
 	}
 
 	// Create image in icon name
-	fmt.Println(source)
+	// fmt.Println(source)
 	pixbuf, err := iconTheme.LoadIcon(
 		source, size, gtk.ICON_LOOKUP_FORCE_SIZE)
 	if err != nil {

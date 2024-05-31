@@ -10,7 +10,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-const version = "0.0.4-8-dev"
+const version = "0.0.5-0-alpha"
 
 // Only during development
 const CONFIG_DIR = "./configs"
@@ -47,6 +47,7 @@ func main() {
 	initSettings()
 
 	gtk.Init(nil)
+	signalHandler()
 
 	window, err = gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {

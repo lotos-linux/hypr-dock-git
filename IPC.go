@@ -183,12 +183,15 @@ func initHyprEvents() {
 		}
 	
 		if strings.Contains(hyprEvent, "activespecial>>") {
-			specialData := strings.TrimSpace(strings.Split(hyprEvent, ">>")[1])
+			// fmt.Println(hyprEvent)
+			specialData := strings.TrimSpace(strings.Split(hyprEvent, "activespecial>>")[1])
 			specialDataArr := strings.Split(specialData, ",")
 			if specialDataArr[0] == "special:special" {
+				// fmt.Println("Open")
 				special = true
 			}
 			if specialDataArr[0] != "special:special" {
+				// fmt.Println("Close")
 				special = false
 			}
 		}

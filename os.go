@@ -3,8 +3,15 @@ package main
 import (
 	"os"
 	"fmt"
+	"slices"
+	"syscall"
+	"strconv"
 	"os/exec"
+	"os/signal"
+	"path/filepath"
 	"strings"
+	"github.com/gotk3/gotk3/gtk"
+	"github.com/allan-simon/go-singleinstance"
 )
 
 type desktopData struct {
@@ -13,7 +20,7 @@ type desktopData struct {
 	Exec	string
 }
 
-const appDir = "/usr/share/applications/"
+var desktopDirs = getAppDirs()
 
 func getDesktopData(className string) (desktopData, error) {
 	allData, err := loadTextFile(searchDesktopFile(className))
@@ -31,24 +38,26 @@ func getDesktopData(className string) (desktopData, error) {
 }
 
 func searchDesktopFile(className string) string{
-	desktopFile := className + ".desktop"
-	_, err := os.Stat(appDir + desktopFile)
-	if err == nil {
-		return appDir + desktopFile
-	}
-
-	// If file non found
-	files, _ := os.ReadDir(appDir)
-	for _, file := range files {
-		fileName := file.Name()
-
-		// "krita" > "org.kde.krita.desktop" / "lutris" > "net.lutris.Lutris.desktop"
-		if strings.Count(fileName, ".") > 1 && strings.Contains(fileName, className) {
-			return appDir + fileName
+	for _, appDir := range desktopDirs {
+		desktopFile := className + ".desktop"
+		_, err := os.Stat(filepath.Join(appDir, desktopFile))
+		if err == nil {
+			return filepath.Join(appDir, desktopFile)
 		}
-		// "VirtualBox Manager" > "virtualbox.desktop"
-		if fileName == strings.Split(strings.ToLower(className), " ")[0] + ".desktop" {
-			return appDir + fileName
+	
+		// If file non found
+		files, _ := os.ReadDir(appDir)
+		for _, file := range files {
+			fileName := file.Name()
+	
+			// "krita" > "org.kde.krita.desktop" / "lutris" > "net.lutris.Lutris.desktop"
+			if strings.Count(fileName, ".") > 1 && strings.Contains(fileName, className) {
+				return filepath.Join(appDir, fileName)
+			}
+			// "VirtualBox Manager" > "virtualbox.desktop"
+			if fileName == strings.Split(strings.ToLower(className), " ")[0] + ".desktop" {
+				return filepath.Join(appDir, fileName)
+			}
 		}
 	}
 
@@ -134,4 +143,82 @@ func launch(command string) {
 	if err := cmd.Start(); err != nil {
 		fmt.Println("Unable to launch command!", err.Error())
 	}
+}
+
+func getAppDirs() []string {
+	var dirs []string
+	xdgDataDirs := ""
+
+	home := os.Getenv("HOME")
+	xdgDataHome := os.Getenv("XDG_DATA_HOME")
+	if os.Getenv("XDG_DATA_DIRS") != "" {
+		xdgDataDirs = os.Getenv("XDG_DATA_DIRS")
+	} else {
+		xdgDataDirs = "/usr/local/share/:/usr/share/"
+	}
+	if xdgDataHome != "" {
+		dirs = append(dirs, filepath.Join(xdgDataHome, "applications"))
+	} else if home != "" {
+		dirs = append(dirs, filepath.Join(home, ".local/share/applications"))
+	}
+	for _, d := range strings.Split(xdgDataDirs, ":") {
+		dirs = append(dirs, filepath.Join(d, "applications"))
+	}
+	flatpakDirs := []string{filepath.Join(home, ".local/share/flatpak/exports/share/applications"),
+		"/var/lib/flatpak/exports/share/applications"}
+
+	for _, d := range flatpakDirs {
+		if !slices.Contains(dirs, d) {
+			dirs = append(dirs, d)
+		}
+	}
+	return dirs
+}
+
+func tempDir() string {
+	if os.Getenv("TMPDIR") != "" {
+		return os.Getenv("TMPDIR")
+	} else if os.Getenv("TEMP") != "" {
+		return os.Getenv("TEMP")
+	} else if os.Getenv("TMP") != "" {
+		return os.Getenv("TMP")
+	}
+	return "/tmp"
+}
+
+func signalHandler() {
+	signalChanel := make(chan os.Signal, 1)
+    signal.Notify(signalChanel, syscall.SIGTERM, syscall.SIGUSR1)
+
+	go func() {
+		for {
+			signalU := <-signalChanel
+			switch signalU {
+			case syscall.SIGTERM:
+				fmt.Println("term")
+				gtk.MainQuit()
+			case syscall.SIGUSR1:
+				fmt.Println("USR1")
+				gtk.MainQuit()
+			case syscall.SIGINT:
+				fmt.Println("ctrl + c, exing...")
+				gtk.MainQuit()
+			default:
+				fmt.Println("Unknow signal")
+			}
+		}
+	}()
+	
+	lockFilePath := fmt.Sprintf("%s/hypr-dock-%s.lock", tempDir(), os.Getenv("USER"))
+	lockFile, err := singleinstance.CreateLockFile(lockFilePath)
+	if err != nil {
+		file, err := loadTextFile(lockFilePath)
+		if err == nil {
+			pidStr := file[0]
+			pidInt, _ := strconv.Atoi(pidStr)
+			syscall.Kill(pidInt, syscall.SIGUSR1)
+		}
+		os.Exit(0)
+	}
+	defer lockFile.Close()
 }
