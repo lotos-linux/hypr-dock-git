@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"slices"
 	"syscall"
-	"strconv"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"strings"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/allan-simon/go-singleinstance"
 )
 
 type desktopData struct {
@@ -195,30 +193,14 @@ func signalHandler() {
 			signalU := <-signalChanel
 			switch signalU {
 			case syscall.SIGTERM:
-				fmt.Println("term")
+				fmt.Println("Exit... (SIGTERM)")
 				gtk.MainQuit()
 			case syscall.SIGUSR1:
-				fmt.Println("USR1")
-				gtk.MainQuit()
-			case syscall.SIGINT:
-				fmt.Println("ctrl + c, exing...")
+				fmt.Println("Exit... (SIGUSR1)")
 				gtk.MainQuit()
 			default:
 				fmt.Println("Unknow signal")
 			}
 		}
 	}()
-	
-	lockFilePath := fmt.Sprintf("%s/hypr-dock-%s.lock", tempDir(), os.Getenv("USER"))
-	lockFile, err := singleinstance.CreateLockFile(lockFilePath)
-	if err != nil {
-		file, err := loadTextFile(lockFilePath)
-		if err == nil {
-			pidStr := file[0]
-			pidInt, _ := strconv.Atoi(pidStr)
-			syscall.Kill(pidInt, syscall.SIGUSR1)
-		}
-		os.Exit(0)
-	}
-	defer lockFile.Close()
 }

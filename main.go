@@ -3,16 +3,21 @@ package main
 import (
 	"fmt"
 	"flag"
+	"os"
+	"syscall"
 	"time"
 	"hypr-dock/cfg"
 	"github.com/dlasky/gotk3-layershell/layershell"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/allan-simon/go-singleinstance"
+	"strconv"
 )
 
 const version = "0.0.5-0-alpha"
 
 // Only during development
+// const CONFIG_DIR = "/home/lotsmannc/repos/gotk/configs"
 const CONFIG_DIR = "./configs"
 const THEMES_DIR = CONFIG_DIR + "/themes/"
 const MAIN_CONFIG = CONFIG_DIR + "/config.jsonc"
@@ -44,10 +49,24 @@ func initSettings() {
 }
 
 func main() {
-	initSettings()
-
-	gtk.Init(nil)
 	signalHandler()
+
+	lockFilePath := fmt.Sprintf("%s/hypr-dock-%s.lock", tempDir(), os.Getenv("USER"))
+	lockFile, err := singleinstance.CreateLockFile(lockFilePath)
+	if err != nil {
+		file, err := loadTextFile(lockFilePath)
+		if err == nil {
+			pidStr := file[0]
+			pidInt, _ := strconv.Atoi(pidStr)
+			syscall.Kill(pidInt, syscall.SIGUSR1)
+		}
+		os.Exit(0)
+	}
+	defer lockFile.Close()
+
+	// Window build
+	initSettings()
+	gtk.Init(nil)
 
 	window, err = gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
@@ -68,8 +87,14 @@ func main() {
 	window.Add(app)
 	window.Connect("destroy", func() {gtk.MainQuit()})
 	window.ShowAll()
+
+	// Build detect area
 	if config.Layer == "auto" {initDetectArea()}
+
+	// Hyprland socket connect
 	go initHyprEvents()
+
+
 	gtk.Main()
 }
 
