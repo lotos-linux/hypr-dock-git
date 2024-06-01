@@ -231,7 +231,7 @@ func contextMenu(windows []map[string]string) *gtk.Menu {
 		menuItem, _ := gtk.MenuItemNew()
 		hbox, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 6)
 		label, _ := gtk.LabelNew(window["Title"])
-		fmt.Println(window["Title"])
+		// fmt.Println(window["Title"])
 
 		menuItem.Connect("activate", func() {
 			hyprctl("dispatch focuswindow address:" + window["Address"])
