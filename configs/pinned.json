@@ -1,3 +1,8 @@
 {
-    "Pinned": ["org.telegram.desktop", "firefox", "kitty", "krita", "org.inkscape.Inkscape", "Code", "com.obsproject.Studio", "lutris", "com.github.wwmm.easyeffects", "nemo"]
+  "Pinned": [
+    "firefox",
+    "org.telegram.desktop",
+    "code-oss",
+    "kitty"
+  ]
 }

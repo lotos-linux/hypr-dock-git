@@ -110,3 +110,27 @@ func ReadItemList(jsonFile string) []string {
 	
 	return itemList.Pinned
 }
+
+func ChangeJsonPinnedApps(apps []string, jsoncFile string) error {
+	itemList := ItemList{
+		Pinned: apps,
+	}
+
+	jsonData, err := json.MarshalIndent(itemList, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal JSON: %w", err)
+	}
+
+	file, err := os.Create(jsoncFile)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer file.Close()
+
+	_, err = file.Write(jsonData)
+	if err != nil {
+		return fmt.Errorf("failed to write to file: %w", err)
+	}
+
+	return nil
+}

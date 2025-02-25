@@ -17,8 +17,8 @@ import (
 const version = "0.0.5-0-alpha"
 
 // Only during development
-// const CONFIG_DIR = "/home/lotsmannc/repos/gotk/configs"
-const CONFIG_DIR = "./configs"
+const CONFIG_DIR = "/home/lots/hypr-dock/configs"
+// const CONFIG_DIR = "./configs"
 const THEMES_DIR = CONFIG_DIR + "/themes/"
 const MAIN_CONFIG = CONFIG_DIR + "/config.jsonc"
 const ITEMS_CONFIG = CONFIG_DIR + "/pinned.json"

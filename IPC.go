@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"github.com/goccy/go-json"
 	// "github.com/dlasky/gotk3-layershell/layershell"
+	"github.com/gotk3/gotk3/glib"
 )
 
 type workspace struct {
@@ -49,32 +50,34 @@ type monitor struct {
 }
 
 type client struct {
-	Address   string `json:"address"`
-	Mapped    bool   `json:"mapped"`
-	Hidden    bool   `json:"hidden"`
-	At        []int  `json:"at"`
-	Size      []int  `json:"size"`
+	Address         string `json:"address"`
+	Mapped          bool   `json:"mapped"`
+	Hidden          bool   `json:"hidden"`
+	At              []int  `json:"at"`
+	Size            []int  `json:"size"`
 
 	Workspace struct {
 		Id   int    `json:"id"`
 		Name string `json:"name"`
-
 	} `json:"workspace"`
 
-	Floating       bool          `json:"floating"`
-	Monitor        int           `json:"monitor"`
-	Class          string        `json:"class"`
-	Title          string        `json:"title"`
-	InitialClass   string        `json:"initialClass"`
-	InitialTitle   string        `json:"initialTitle"`
-	Pid            int           `json:"pid"`
-	Xwayland       bool          `json:"xwayland"`
-	Pinned         bool          `json:"pinned"`
-	Fullscreen     bool          `json:"fullscreen"`
-	FullscreenMode int           `json:"fullscreenMode"`
-	FakeFullscreen bool          `json:"fakeFullscreen"`
-	Grouped        []interface{} `json:"grouped"`
-	Swallowing     interface{}   `json:"swallowing"`
+	Floating        bool          `json:"floating"`
+	Pseudo          bool          `json:"pseudo"`          // Добавлено
+	Monitor         int           `json:"monitor"`
+	Class           string        `json:"class"`
+	Title           string        `json:"title"`
+	InitialClass    string        `json:"initialClass"`
+	InitialTitle    string        `json:"initialTitle"`
+	Pid             int           `json:"pid"`
+	Xwayland        bool          `json:"xwayland"`
+	Pinned          bool          `json:"pinned"`
+	Fullscreen      int           `json:"fullscreen"`      // Исправлено: int вместо bool
+	FullscreenClient int          `json:"fullscreenClient"` // Добавлено
+	Grouped         []interface{} `json:"grouped"`
+	Tags            []interface{} `json:"tags"`            // Добавлено
+	Swallowing      string        `json:"swallowing"`      // Исправлено: string вместо interface{}
+	FocusHistoryID  int           `json:"focusHistoryID"`  // Добавлено
+	InhibitingIdle  bool          `json:"inhibitingIdle"`  // Добавлено
 }
 
 var monitors                           []monitor
@@ -128,12 +131,15 @@ func listMonitors() error {
 
 func listClients() error {
 	response, err := hyprctl("j/clients")
+	// fmt.Println(response)
 	if err != nil {
 		return err
 	} else {
 		err = json.Unmarshal([]byte(response), &clients)
+		// fmt.Println("json reading...")
 	}
 	activeClient, _ = getActiveWindow()
+	// fmt.Println(activeClient)
 	return err
 }
 
@@ -155,42 +161,92 @@ func initHyprEvents() {
 		unixNumber, err := unixConnect.Read(bufer)
 		if err != nil {fmt.Println(err)}
 		hyprEvent := string(bufer[:unixNumber])
-		// fmt.Println(hyprEvent) 
+		events := splitEvents(hyprEvent)
 
-		if strings.Contains(hyprEvent, "configreloaded") {
-			addLayerRule()
-		}
+		for _, event := range events {
+			// fmt.Println(event)
 
-		if strings.Contains(hyprEvent, "openwindow>>") {
-			windowData := strings.TrimSpace(strings.Split(hyprEvent, "openwindow>>")[1])
-			windowAddressGrange := "0x" + strings.Split(windowData, ",")[0]
-			windowAddress := strings.Split(windowAddressGrange, "\n")[0]
-			windowClient, err := searchClientByAddress(windowAddress)
-			if err != nil {
-				fmt.Println(err)
-			} else {
-				go addApp(windowClient)
+			if strings.Contains(event, "configreloaded") {
+				go addLayerRule()
+			}
+
+			if strings.Contains(event, "windowtitlev2>>") {
+				go windowTitleHandler(event)
+			}
+
+			if strings.Contains(event, "openwindow>>") {
+				go openwindowHandler(event)
+			}
+
+			if strings.Contains(event, "closewindow>>") {
+				go closewindowHandler(event)
+			}
+
+			if strings.Contains(event, "activespecial>>") {
+				go activatespecialHandler(event)
 			}
 		}
+	}
+}
 
-		if strings.Contains(hyprEvent, "closewindow>>") {
-			windowData := strings.TrimSpace(strings.Split(hyprEvent, "closewindow>>")[1])
-			windowAddressGrange := "0x" + strings.Split(windowData, ",")[0]
-			windowAddress := strings.Split(windowAddressGrange, "\n")[0]
-			go removeApp(windowAddress)
-		}
-	
-		if strings.Contains(hyprEvent, "activespecial>>") {
-			// fmt.Println(hyprEvent)
-			specialData := strings.TrimSpace(strings.Split(hyprEvent, "activespecial>>")[1])
-			specialDataArr := strings.Split(specialData, ",")
-			if specialDataArr[0] == "special:special" {
-				// fmt.Println("Open")
-				special = true
-			}
-			if specialDataArr[0] != "special:special" {
-				// fmt.Println("Close")
-				special = false
+func windowTitleHandler(event string) {
+	data := eventHandler(event, 2)
+	address := "0x" + strings.TrimSpace(data[0])
+	go changeWindowTitle(address, data[1])
+}
+
+func activatespecialHandler(event string) {
+	data := eventHandler(event, 2)
+
+	if data[0] == "special:special" {
+		special = true
+	}
+	if data[0] != "special:special" {
+		special = false
+	}
+}
+
+func openwindowHandler(event string) {
+	data := eventHandler(event, 4)
+	address := "0x" + strings.TrimSpace(data[0])
+	windowClient, err := searchClientByAddress(address)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		glib.IdleAdd(func() {
+			addApp(windowClient)
+		})
+	}
+}
+
+func closewindowHandler(event string) {
+	data := eventHandler(event, 1)
+	address := "0x" + strings.TrimSpace(data[0])
+	glib.IdleAdd(func() {
+		removeApp(address)
+	})
+}
+
+func eventHandler(event string, n int) []string {
+	parts := strings.SplitN(event, ">>", 2)
+	dataClast := strings.TrimSpace(parts[1])
+	dataParts := strings.SplitN(dataClast, ",", n)
+
+	for i := range dataParts {
+		dataParts[i] = strings.TrimSpace(dataParts[i])
+	}
+
+	return dataParts
+}
+
+func changeWindowTitle(address string, title string) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	for _, data := range addedApps {
+		for _, appWindow := range data.Windows {
+			if appWindow["Address"] == address {
+				appWindow["Title"] = title
 			}
 		}
 	}
@@ -214,4 +270,18 @@ func addLayerRule() {
 		hyprctl("keyword layerrule blur,hypr-dock")
 		hyprctl("keyword layerrule ignorealpha 0.4,hypr-dock")
 	}
+}
+
+func splitEvents(multiLineEvent string) []string {
+	events := strings.Split(multiLineEvent, "\n")
+
+	var filteredEvents []string
+	for _, event := range events {
+		event = strings.TrimSpace(event)
+		if event != "" {
+			filteredEvents = append(filteredEvents, event)
+		}
+	}
+
+	return filteredEvents
 }

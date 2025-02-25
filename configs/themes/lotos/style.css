@@ -3,12 +3,15 @@ window {
 }
 
 #app {
-  background-color: rgba(42, 41, 49, 0.59);
+  background-color: rgba(42, 41, 49, 0.473);
   border-radius: 12px;
   padding: 5px;
 }
 
 button {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
   padding: 4px;
+  border-radius: 50%;
+  border: none;
+  /* margin-bottom: 4px; */
 }
