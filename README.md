@@ -1,9 +1,12 @@
 # hypr-dock
 ### Интерактовная док-панель для Hyprland
 
-![Screen shot](https://raw.githubusercontent.com/lotos-linux/hypr-dock/refs/heads/main/github/screenshot1.png)
+![screenshot1](https://github.com/user-attachments/assets/b98cdf7c-83b0-4c12-9da1-ada9e1543178)
 
-https://github.com/user-attachments/assets/1dff7b7e-d41c-4d38-9df9-183907ddf091
+
+https://github.com/user-attachments/assets/50d26918-ac74-4b3b-b384-9dd98c62a799
+
+
 
 ## Установка
 
