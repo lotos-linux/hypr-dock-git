@@ -3,7 +3,7 @@
 
 ![Screen shot](https://raw.githubusercontent.com/lotos-linux/hypr-dock/refs/heads/main/github/screenshot1.png)
 
-< https://github.com/lotos-linux/hypr-dock/raw/refs/heads/main/github/video.MOV >
+https://github.com/user-attachments/assets/1dff7b7e-d41c-4d38-9df9-183907ddf091
 
 ## Установка
 
