@@ -3,6 +3,8 @@
 
 ![Screen shot](https://raw.githubusercontent.com/lotos-linux/hypr-dock/refs/heads/main/github/screenshot1.png)
 
+< https://github.com/lotos-linux/hypr-dock/raw/refs/heads/main/github/video.MOV >
+
 ## Установка
 
 ### Зависимости
