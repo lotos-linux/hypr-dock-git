@@ -10,5 +10,6 @@
     // Window position on screen (top, bottom, left, right) (default "bottom")
     "Position": "bottom",
 
+    // Indent from the edge of the screen (px) (default 8)
     "Margin": 8
 }
