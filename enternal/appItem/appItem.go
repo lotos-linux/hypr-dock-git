@@ -130,7 +130,7 @@ func (item *Item) TogglePin() {
 
 func GetIndicatorImage(instances int) (*gtk.Image, error) {
 	var path string
-	themeDir := config.Consts["THEMES_DIR"] + config.CurrentTheme + "/"
+	themeDir := config.Consts["THEMES_DIR"] + "/" + config.CurrentTheme + "/"
 
 	switch {
 	case instances == 0:

@@ -7,7 +7,7 @@ import (
 
 const (
 	ConfigDir   = ".config/hypr-dock"
-	ThemesDir   = "themes"
+	ThemesDir   = "themes/"
 	MainConfig  = "config.jsonc"
 	ItemsConfig = "pinned.json"
 )

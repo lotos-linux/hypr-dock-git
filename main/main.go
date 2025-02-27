@@ -18,7 +18,7 @@ import (
 	"hypr-dock/enternal/pkg/ipc"
 )
 
-// const version = "0.0.5-0-alpha"
+// const version = "1.0-beta"
 
 var pinnedApps []string
 
@@ -51,7 +51,7 @@ func initSettings() {
 	config.CurrentTheme = *currentTheme
 
 	themeConfig := cfg.ConnectConfig(
-		THEMES_DIR+config.CurrentTheme+"/"+config.CurrentTheme+".jsonc", true)
+		THEMES_DIR+"/"+config.CurrentTheme+"/"+config.CurrentTheme+".jsonc", true)
 
 	config.Blur = themeConfig.Blur
 	config.Spacing = themeConfig.Spacing
@@ -92,7 +92,7 @@ func main() {
 	window.SetTitle("hypr-dock")
 	orientation := setWindowProperty(window)
 
-	err = addCssProvider(THEMES_DIR + config.CurrentTheme + "/style.css")
+	err = addCssProvider(THEMES_DIR + "/" + config.CurrentTheme + "/style.css")
 	if err != nil {
 		fmt.Println(
 			"CSS file not found, the default GTK theme is running!\n", err)
