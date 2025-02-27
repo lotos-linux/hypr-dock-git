@@ -1,64 +1,63 @@
 package cfg
 
 import (
-	"os"
 	"fmt"
-	"io/ioutil"
-	"github.com/goccy/go-json"
+	"io"
+	"log"
+	"os"
+
 	"github.com/akshaybharambe14/go-jsonc"
+	"github.com/goccy/go-json"
 	// "github.com/tidwall/sjson"
 )
 
-var err error
-
 type Config struct {
-	CurrentTheme 	string
-	IconSize   		int
-	Layer     		string
-	Position		string
-	Blur			string
-	Spacing			int
-	Margin			int
+	CurrentTheme string
+	IconSize     int
+	Layer        string
+	Position     string
+	Blur         string
+	Spacing      int
+	Margin       int
+	Consts       map[string]string
 }
 
 func GetDefaultConfig() Config {
-	config := Config{}
-
-	config.CurrentTheme = "lotos"
-	config.IconSize = 21
-	config.Layer = "auto"
-	config.Position = "bottom"
-	config.Blur = "on"
-	config.Spacing = 8
-	config.Margin = 8
-
-	return config
+	return Config{
+		CurrentTheme: "lotos",
+		IconSize:     21,
+		Layer:        "auto",
+		Position:     "bottom",
+		Blur:         "on",
+		Spacing:      8,
+		Margin:       8,
+		Consts:       map[string]string{},
+	}
 }
 
 func ConnectConfig(jsoncFile string, isTheme bool) Config {
 	// Read jsonc
 	file, err := os.Open(jsoncFile)
 	if err != nil {
-		fmt.Println("Config file not found!\n", err, "\nLoad default config")
+		log.Println("Config file not found!\n", err, "\nLoad default config")
 		return GetDefaultConfig()
 	}
 	defer file.Close()
 
 	decoder := jsonc.NewDecoder(file)
-	res, err := ioutil.ReadAll(decoder)
-	fmt.Println(json.Valid(res), jsoncFile)
+	res, _ := io.ReadAll(decoder)
+	log.Println(json.Valid(res), jsoncFile)
 
 	config := Config{}
 	if err = json.Unmarshal(res, &config); err != nil {
-		fmt.Println("Config is incorrect!\n", err, "\nLoad default config")
+		log.Println("Config is incorrect!\n", err, "\nLoad default config")
 		return GetDefaultConfig()
 	}
 
-
 	// Set default values ​​if not specified
-	if config.CurrentTheme == "" && !isTheme{
+	if config.CurrentTheme == "" && !isTheme {
 		config.CurrentTheme = GetDefaultConfig().CurrentTheme
-		fmt.Println("The theme is not set, the default theme is currently used - \"lotos\"")
+		log.Println("The theme is not set, the default theme is currently used - \"lotos\"")
 	}
 
 	if config.Layer == "" {
@@ -71,7 +70,7 @@ func ConnectConfig(jsoncFile string, isTheme bool) Config {
 
 	if config.Position == "" || !isCorrect3 {
 		if !isTheme {
-			fmt.Println("Position incorrect or empty\nDefault position set")
+			log.Println("Position incorrect or empty\nDefault position set")
 		}
 		config.Position = GetDefaultConfig().Position
 	}
@@ -88,12 +87,13 @@ func ConnectConfig(jsoncFile string, isTheme bool) Config {
 		config.Blur = GetDefaultConfig().Blur
 	}
 
+	config.Consts = GetDefaultConfig().Consts
+
 	return config
 }
 
-
 type ItemList struct {
-	Pinned			[]string
+	Pinned []string
 }
 
 func ReadItemList(jsonFile string) []string {
@@ -105,9 +105,9 @@ func ReadItemList(jsonFile string) []string {
 	itemList := ItemList{}
 	err := decoder.Decode(&itemList)
 	if err != nil {
-	  fmt.Println("error: ", err)
+		log.Println("error: ", err)
 	}
-	
+
 	return itemList.Pinned
 }
 

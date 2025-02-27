@@ -1,36 +1,47 @@
 package main
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
 	"os"
+	"strconv"
 	"syscall"
 	"time"
-	"hypr-dock/cfg"
+
+	"github.com/allan-simon/go-singleinstance"
 	"github.com/dlasky/gotk3-layershell/layershell"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/allan-simon/go-singleinstance"
-	"strconv"
+
+	"hypr-dock/enternal/pkg/cfg"
+	"hypr-dock/enternal/pkg/h"
+	"hypr-dock/enternal/pkg/ipc"
 )
 
-const version = "0.0.5-0-alpha"
+// const version = "0.0.5-0-alpha"
 
-// Only during development
-const CONFIG_DIR = "/home/lots/hypr-dock/configs"
-// const CONFIG_DIR = "./configs"
-const THEMES_DIR = CONFIG_DIR + "/themes/"
-const MAIN_CONFIG = CONFIG_DIR + "/config.jsonc"
-const ITEMS_CONFIG = CONFIG_DIR + "/pinned.json"
+var pinnedApps []string
 
-var err error
 var config cfg.Config
+var isCancelHide int
 var window *gtk.Window
 var detectArea *gtk.Window
 
 var orientation gtk.Orientation
 
+var (
+	CONFIG_DIR   string
+	THEMES_DIR   string
+	MAIN_CONFIG  string
+	ITEMS_CONFIG string
+)
+
 func initSettings() {
+	CONFIG_DIR = h.GetConfigPath()
+	THEMES_DIR = h.GetThemesPath()
+	MAIN_CONFIG = h.GetMainConfigPath()
+	ITEMS_CONFIG = h.GetItemsConfigPath()
+
 	configFile := flag.String("config", MAIN_CONFIG, "config file")
 
 	config = cfg.ConnectConfig(*configFile, false)
@@ -40,21 +51,26 @@ func initSettings() {
 	config.CurrentTheme = *currentTheme
 
 	themeConfig := cfg.ConnectConfig(
-		THEMES_DIR + config.CurrentTheme + "/" + config.CurrentTheme + ".jsonc", true)
+		THEMES_DIR+config.CurrentTheme+"/"+config.CurrentTheme+".jsonc", true)
 
 	config.Blur = themeConfig.Blur
 	config.Spacing = themeConfig.Spacing
+
+	config.Consts["CONFIG_DIR"] = CONFIG_DIR
+	config.Consts["THEMES_DIR"] = THEMES_DIR
+	config.Consts["MAIN_CONFIG"] = MAIN_CONFIG
+	config.Consts["ITEMS_CONFIG"] = ITEMS_CONFIG
 
 	flag.Parse()
 }
 
 func main() {
-	signalHandler()
+	h.SignalHandler()
 
-	lockFilePath := fmt.Sprintf("%s/hypr-dock-%s.lock", tempDir(), os.Getenv("USER"))
+	lockFilePath := fmt.Sprintf("%s/hypr-dock-%s.lock", h.TempDir(), os.Getenv("USER"))
 	lockFile, err := singleinstance.CreateLockFile(lockFilePath)
 	if err != nil {
-		file, err := loadTextFile(lockFilePath)
+		file, err := h.LoadTextFile(lockFilePath)
 		if err == nil {
 			pidStr := file[0]
 			pidInt, _ := strconv.Atoi(pidStr)
@@ -76,24 +92,25 @@ func main() {
 	window.SetTitle("hypr-dock")
 	orientation := setWindowProperty(window)
 
-	err = addCssProvider(THEMES_DIR + config.CurrentTheme + "/style.css")	 
+	err = addCssProvider(THEMES_DIR + config.CurrentTheme + "/style.css")
 	if err != nil {
 		fmt.Println(
 			"CSS file not found, the default GTK theme is running!\n", err)
 	}
 
-	buildApp(orientation)
+	app := buildApp(orientation)
 
 	window.Add(app)
-	window.Connect("destroy", func() {gtk.MainQuit()})
+	window.Connect("destroy", func() { gtk.MainQuit() })
 	window.ShowAll()
 
 	// Build detect area
-	if config.Layer == "auto" {initDetectArea()}
+	if config.Layer == "auto" {
+		initDetectArea()
+	}
 
 	// Hyprland socket connect
-	go initHyprEvents()
-
+	go ipc.InitHyprEvents()
 
 	gtk.Main()
 }
@@ -110,9 +127,9 @@ func initDetectArea() {
 
 	switch orientation {
 	case gtk.ORIENTATION_HORIZONTAL:
-		detectArea.SetSizeRequest(config.IconSize * len(addedApps) * 2 - 20, 1)
+		detectArea.SetSizeRequest(config.IconSize*len(addedApps)*2-20, 1)
 	case gtk.ORIENTATION_VERTICAL:
-		detectArea.SetSizeRequest(1, config.IconSize * len(addedApps) * 2 - 20)
+		detectArea.SetSizeRequest(1, config.IconSize*len(addedApps)*2-20)
 	}
 
 	detectArea.Connect("enter-notify-event", func(window *gtk.Window, e *gdk.Event) {
@@ -138,7 +155,7 @@ func addCssProvider(cssFile string) error {
 		screen, _ := gdk.ScreenGetDefault()
 
 		gtk.AddProviderForScreen(
-			screen, cssProvider, 
+			screen, cssProvider,
 			gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
 		return nil
@@ -183,7 +200,7 @@ func setWindowProperty(window *gtk.Window) gtk.Orientation {
 	layershell.SetAnchor(window, Edge, true)
 	layershell.SetMargin(window, Edge, 0)
 
-	addLayerRule()
+	ipc.AddLayerRule()
 
 	if config.Layer == "auto" {
 		layershell.SetLayer(window, Layer)
@@ -215,7 +232,7 @@ func autoLayer() {
 
 		if isInWindow {
 			go func() {
-				time.Sleep(time.Second / 3) 
+				time.Sleep(time.Second / 3)
 				setLayer("bottom")
 			}()
 		}
@@ -232,4 +249,10 @@ func setLayer(layer string) {
 		}
 		isCancelHide = 0
 	}
+}
+
+func cancelHide(button *gtk.Button) {
+	button.Connect("enter-notify-event", func() {
+		isCancelHide = 1
+	})
 }
