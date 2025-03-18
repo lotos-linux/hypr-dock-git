@@ -1,8 +1,4 @@
-package h
-
-import "hypr-dock/enternal/pkg/cfg"
-
-var config cfg.Config
+package utils
 
 func AddToSlice(slice *[]string, value string) {
 	*slice = append(*slice, value)
@@ -24,8 +20,4 @@ func RemoveFromSliceByValue(slice *[]string, value string) {
 
 func RemoveFromSlice(slice []map[string]string, s int) []map[string]string {
 	return append(slice[:s], slice[s+1:]...)
-}
-
-func SetConfig(inpConfig cfg.Config) {
-	config = inpConfig
 }

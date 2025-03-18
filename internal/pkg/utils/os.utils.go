@@ -1,15 +1,11 @@
-package h
+package utils
 
 import (
 	"errors"
 	"log"
 	"os"
 	"os/exec"
-	"os/signal"
 	"strings"
-	"syscall"
-
-	"github.com/gotk3/gotk3/gtk"
 )
 
 func Launch(command string) {
@@ -62,27 +58,6 @@ func Launch(command string) {
 	if err := cmd.Start(); err != nil {
 		log.Println("Unable to launch command!", err.Error())
 	}
-}
-
-func SignalHandler() {
-	signalChanel := make(chan os.Signal, 1)
-	signal.Notify(signalChanel, syscall.SIGTERM, syscall.SIGUSR1)
-
-	go func() {
-		for {
-			signalU := <-signalChanel
-			switch signalU {
-			case syscall.SIGTERM:
-				log.Println("Exit... (SIGTERM)")
-				gtk.MainQuit()
-			case syscall.SIGUSR1:
-				log.Println("Exit... (SIGUSR1)")
-				gtk.MainQuit()
-			default:
-				log.Println("Unknow signal")
-			}
-		}
-	}()
 }
 
 func LoadTextFile(path string) ([]string, error) {

@@ -1,18 +1,18 @@
-package appItem
+package item
 
 import (
 	"log"
+	"path/filepath"
 	"slices"
 
 	"github.com/gotk3/gotk3/gtk"
 
-	"hypr-dock/enternal/pkg/cfg"
-	"hypr-dock/enternal/pkg/desktop"
-	"hypr-dock/enternal/pkg/h"
-	"hypr-dock/enternal/pkg/ipc"
+	"hypr-dock/internal/pkg/cfg"
+	"hypr-dock/internal/pkg/desktop"
+	"hypr-dock/internal/pkg/utils"
+	"hypr-dock/internal/settings"
+	"hypr-dock/pkg/ipc"
 )
-
-var config cfg.Config
 
 type Item struct {
 	Instances      int
@@ -27,6 +27,7 @@ type Item struct {
 }
 
 func New(className string) (*Item, error) {
+	config := settings.Get()
 	desktopData := desktop.New(className)
 
 	item, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
@@ -36,7 +37,7 @@ func New(className string) (*Item, error) {
 
 	button, err := gtk.ButtonNew()
 	if err == nil {
-		image, err := h.CreateImage(desktopData.Icon, config.IconSize)
+		image, err := utils.CreateImage(desktopData.Icon, config.IconSize)
 		if err == nil {
 			button.SetImage(image)
 		} else {
@@ -79,7 +80,7 @@ func (item *Item) RemoveLastInstance(windowIndex int) {
 	}
 
 	item.Instances -= 1
-	item.Windows = h.RemoveFromSlice(item.Windows, windowIndex)
+	item.Windows = utils.RemoveFromSlice(item.Windows, windowIndex)
 	item.IndicatorImage = newImage
 }
 
@@ -109,43 +110,44 @@ func (item *Item) IsPinned() bool {
 
 func (item *Item) TogglePin() {
 	if item.IsPinned() {
-		h.RemoveFromSliceByValue(&*item.PinnedList, item.ClassName)
+		utils.RemoveFromSliceByValue(item.PinnedList, item.ClassName)
 		if item.Instances == 0 {
 			item.ButtonBox.Destroy()
 			delete(item.List, item.ClassName)
 		}
 		log.Println("Remove:", item.ClassName)
 	} else {
-		h.AddToSlice(&*item.PinnedList, item.ClassName)
+		utils.AddToSlice(item.PinnedList, item.ClassName)
 		log.Println("Add:", item.ClassName)
 	}
 
-	err := cfg.ChangeJsonPinnedApps(*item.PinnedList, config.Consts["ITEMS_CONFIG"])
+	err := cfg.ChangeJsonPinnedApps(*item.PinnedList, settings.PinnedPath)
 	if err != nil {
 		log.Println("Error: ", err)
 	} else {
-		log.Println("File", config.Consts["ITEMS_CONFIG"], "saved successfully!", item.ClassName)
+		log.Println("File", settings.PinnedPath, "saved successfully!", item.ClassName)
 	}
+}
+
+func (item *Item) Remove() {
+	item.ButtonBox.Destroy()
+	delete(item.List, item.ClassName)
 }
 
 func GetIndicatorImage(instances int) (*gtk.Image, error) {
 	var path string
-	themeDir := config.Consts["THEMES_DIR"] + "/" + config.CurrentTheme + "/"
+	indicatorPath := filepath.Join(settings.CurrentThemeDir, "point")
 
 	switch {
 	case instances == 0:
-		path = themeDir + "empty.svg"
+		path = filepath.Join(indicatorPath, "0.svg")
 	case instances == 1:
-		path = themeDir + "single.svg"
+		path = filepath.Join(indicatorPath, "1.svg")
 	case instances == 2:
-		path = themeDir + "multiple.svg"
+		path = filepath.Join(indicatorPath, "2.svg")
 	case instances > 2:
-		path = themeDir + "3.svg"
+		path = filepath.Join(indicatorPath, "3.svg")
 	}
 
-	return h.CreateImage(path, config.IconSize-10)
-}
-
-func SetConfig(inpConfig cfg.Config) {
-	config = inpConfig
+	return utils.CreateImageWidthScale(path, settings.Get().IconSize, 0.56)
 }

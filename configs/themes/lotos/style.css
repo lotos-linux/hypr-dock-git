@@ -11,7 +11,6 @@ window {
 button {
   background-color: rgba(0, 0, 0, 0);
   padding: 4px;
-  border-radius: 50%;
+  border-radius: 12px;
   border: none;
-  /* margin-bottom: 4px; */
 }

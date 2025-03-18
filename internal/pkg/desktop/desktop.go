@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	"hypr-dock/enternal/pkg/h"
+	"hypr-dock/internal/pkg/utils"
 )
 
 type Desktop struct {
@@ -19,7 +19,7 @@ type Desktop struct {
 var desktopDirs = GetAppDirs()
 
 func New(className string) *Desktop {
-	allData, err := h.LoadTextFile(SearchDesktopFile(className))
+	allData, err := utils.LoadTextFile(SearchDesktopFile(className))
 	if err != nil {
 		log.Println(err)
 		return &Desktop{

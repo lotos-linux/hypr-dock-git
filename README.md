@@ -23,7 +23,7 @@ git clone https://github.com/lotos-linux/hypr-dock.git
 cd hypr-dock
 make get
 make build
-make install
+sudo make install
 ```
 
 ## Запуск
@@ -53,8 +53,8 @@ exec-once = hypr-dock [arguments]
 {
     "CurrentTheme": "lotos",
 
-    // Icon size (px) (default 21)
-    "IconSize": 21,
+    // Icon size (px) (default 23)
+    "IconSize": 23,
 
     // Window overlay layer height (auto, background, bottom, top, overlay) (default "auto")
     "Layer": "auto",
@@ -62,14 +62,20 @@ exec-once = hypr-dock [arguments]
     // Window position on screen (top, bottom, left, right) (default "bottom")
     "Position": "bottom",
 
+    // Use system gap (true, false) (default "true")
+    "SystemGapUsed": "true",
+
     // Indent from the edge of the screen (px) (default 8)
     "Margin": 8
 }
 ```
 #### Если параметр не указан значение будет выставлено по умолчанию
-### Автопереключение слоя дока
-#### При `"Layer": "auto"` окно дока находиться под всеми окнами, но если увести курсор мыши к краю экрана - док поднимается над всеми окнами
-
+## Разберем неочевидные параметры
+### Layer
+#### При `"Layer": "auto"` слой дока находиться под всеми окнами, но если увести курсор мыши к краю экрана - док поднимается над ними
+### SystemGapUsed
+#### При `"SystemGapUsed": "true"` док будет задавать для себя отступ от края экрана беря значение из конфигурации `hyprland`, а конкретно значения `general:gaps_out`, при этом док динамически будет подхватывать изменение конфигурации `hyprland`
+#### При `"SystemGapUsed": "false"` отступ от края экрана будет задаваться параметром `Margin`
 
 ### Также есть файл `pinned.json` с закрепленными приложениями
 #### Например
@@ -89,11 +95,10 @@ exec-once = hypr-dock [arguments]
 
 #### Темы находяться в папке `~/.config/hypr-dock/themes/`
 
-### Тема состоит из нескольких файлов
+### Тема состоит из
 - `[название_темы].jsonc` например `lotos.jsonc`
 - `style.css`
-- Четыре `svg` файла с иконками индикатора запуска
-- Иконка-заглушка: `Необязательный` (Если в теме ее нет - ищет в `~/.config/hypr-dock`)
+- Папка с `svg` файлами для индикации количества запущенных приложения
 
 ### В конфиге темы всего два параметра
 ```jsonc

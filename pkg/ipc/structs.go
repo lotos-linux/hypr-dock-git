@@ -49,7 +49,7 @@ type Client struct {
 	} `json:"workspace"`
 
 	Floating         bool          `json:"floating"`
-	Pseudo           bool          `json:"pseudo"` // Добавлено
+	Pseudo           bool          `json:"pseudo"`
 	Monitor          int           `json:"monitor"`
 	Class            string        `json:"class"`
 	Title            string        `json:"title"`
@@ -58,11 +58,11 @@ type Client struct {
 	Pid              int           `json:"pid"`
 	Xwayland         bool          `json:"xwayland"`
 	Pinned           bool          `json:"pinned"`
-	Fullscreen       int           `json:"fullscreen"`       // Исправлено: int вместо bool
-	FullscreenClient int           `json:"fullscreenClient"` // Добавлено
+	Fullscreen       int           `json:"fullscreen"`
+	FullscreenClient int           `json:"fullscreenClient"`
 	Grouped          []interface{} `json:"grouped"`
-	Tags             []interface{} `json:"tags"`           // Добавлено
-	Swallowing       string        `json:"swallowing"`     // Исправлено: string вместо interface{}
-	FocusHistoryID   int           `json:"focusHistoryID"` // Добавлено
-	InhibitingIdle   bool          `json:"inhibitingIdle"` // Добавлено
+	Tags             []interface{} `json:"tags"`
+	Swallowing       string        `json:"swallowing"`
+	FocusHistoryID   int           `json:"focusHistoryID"`
+	InhibitingIdle   bool          `json:"inhibitingIdle"`
 }

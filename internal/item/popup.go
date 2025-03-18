@@ -1,13 +1,13 @@
-package appItem
+package item
 
 import (
 	"log"
 
 	"github.com/gotk3/gotk3/gtk"
 
-	"hypr-dock/enternal/pkg/desktop"
-	"hypr-dock/enternal/pkg/h"
-	"hypr-dock/enternal/pkg/ipc"
+	"hypr-dock/internal/pkg/desktop"
+	"hypr-dock/internal/pkg/utils"
+	"hypr-dock/pkg/ipc"
 )
 
 func (item *Item) WindowsMenu() (*gtk.Menu, error) {
@@ -87,7 +87,7 @@ func BuildLaunchMenuItem(item *Item, exec string) (*gtk.MenuItem, error) {
 	}
 
 	launchMenuItem, err := BuildContextItem(labelText, func() {
-		h.Launch(exec)
+		utils.Launch(exec)
 	})
 
 	if err != nil {
@@ -126,7 +126,7 @@ func BuildContextItem(labelText string, connectFunc func(), iconName ...string) 
 	}
 
 	if len(iconName) > 0 {
-		icon, err := h.CreateImage(iconName[0], 16)
+		icon, err := utils.CreateImage(iconName[0], 16)
 		if err == nil {
 			hbox.Add(icon)
 		}
