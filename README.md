@@ -20,7 +20,7 @@ git clone https://github.com/lotos-linux/hypr-dock.git
 cd hypr-dock
 make get
 make build
-sudo make install
+make install
 ```
 ## Launching
 
