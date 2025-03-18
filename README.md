@@ -15,12 +15,13 @@ https://github.com/user-attachments/assets/50d26918-ac74-4b3b-b384-9dd98c62a799
 - gtk-layer-shell
 
 ### Installation
+```bash
 git clone https://github.com/lotos-linux/hypr-dock.git
 cd hypr-dock
 make get
 make build
 sudo make install
-
+```
 ## Launching
 
 ### Launch Parameters:
