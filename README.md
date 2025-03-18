@@ -43,8 +43,12 @@ sudo make install
 ### Добавьте запуск в `hyprland.conf`:
 
 ```text
-exec-once = hypr-dock [arguments]
+exec-once = hypr-dock
+bind = Super, D, exec, hypr-dock
 ```
+
+#### Док поддерживает только один запущенный экземпляр, так что повторный запуск закроет предыдующий.
+
 ## Настройка
 
 ### В `config.jsonc` доступны такие параметры
