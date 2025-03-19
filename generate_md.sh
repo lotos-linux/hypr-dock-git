@@ -33,4 +33,4 @@ find . -type f ! -path "./bin/*" ! -path "./.git/*" ! -path "./$output_file" ! -
     add_file_content "$file"
 done
 
-echo "Markdown файл успешно создан: $output_file"
+echo "$output_file"
