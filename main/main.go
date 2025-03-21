@@ -43,7 +43,7 @@ func main() {
 
 	window, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
-		log.Println("Unable to create window:", err)
+		log.Fatal("Unable to create window:", err)
 	}
 	appState.SetWindow(window)
 

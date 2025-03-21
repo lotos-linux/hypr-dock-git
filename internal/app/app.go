@@ -20,6 +20,7 @@ import (
 func BuildApp(orientation gtk.Orientation, appState *state.State) *gtk.Box {
 	app, err := gtk.BoxNew(orientation, 0)
 	if err != nil {
+		log.Println("BuildApp() | app | gtk.BoxNew()")
 		log.Fatal(err)
 	}
 

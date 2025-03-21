@@ -3,6 +3,7 @@ package layering
 import (
 	"hypr-dock/internal/settings"
 	"hypr-dock/internal/state"
+	"log"
 	"time"
 
 	"github.com/dlasky/gotk3-layershell/layershell"
@@ -55,7 +56,10 @@ func SetWindowProperty(window *gtk.Window, appState *state.State) (gtk.Orientati
 }
 
 func InitDetectArea(edge layershell.LayerShellEdgeFlags, appState *state.State) {
-	detectArea, _ := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	detectArea, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	if err != nil {
+		log.Fatal("InitDetectArea(), gtk.WindowNew() | ", err)
+	}
 	detectArea.SetName("detect")
 
 	layershell.InitForWindow(detectArea)
