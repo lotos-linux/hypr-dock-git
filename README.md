@@ -1,4 +1,4 @@
-# hypr-dock
+# hypr-dock <p style="display: inline; float: right; font-size: 20px; margin-top: 5px">[`ru`](https://github.com/lotos-linux/hypr-dock/blob/main/README_RU.md)</p>
 ### Interactive Dock Panel for Hyprland
 
 ![screenshot1](https://github.com/user-attachments/assets/b98cdf7c-83b0-4c12-9da1-ada9e1543178)
