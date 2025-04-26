@@ -1,9 +1,8 @@
-<h1 style="display: flex; justify-content: space-between;">
-  <div>hypr-dock</div>
-  <div><a href="https://github.com/lotos-linux/hypr-dock/blob/main/README_RU.md">ru</a></div>
-</h1>
+# hypr-dock
 
-### Interactive Dock Panel for Hyprland
+### Interactive Dock Panel for Hyprland 
+
+Translations: [`Русский`](https://github.com/lotos-linux/hypr-dock/blob/main/README_RU.md)
 
 ![screenshot1](https://github.com/user-attachments/assets/b98cdf7c-83b0-4c12-9da1-ada9e1543178)
 ![250318_10h19m33s_screenshot](https://github.com/user-attachments/assets/3ef014e4-4613-4e28-b186-71ce262db404)
