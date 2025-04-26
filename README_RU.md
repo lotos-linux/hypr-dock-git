@@ -18,7 +18,6 @@ https://github.com/user-attachments/assets/50d26918-ac74-4b3b-b384-9dd98c62a799
 - `gtk-layer-shell`
 
 ### Установка
-
 ```bash
 git clone https://github.com/lotos-linux/hypr-dock.git
 cd hypr-dock
@@ -27,16 +26,32 @@ make build
 make install
 ```
 
+### Удаление
+```bash
+make uninstall
+```
+
+### Обновление
+```bash
+make update
+```
+
+### Локальный запуск (dev mode)
+```bash
+make exec
+```
+
 ## Запуск
 
 ### Параметры запуска:
 
 ```text
-  -config string
-    	config file (default "~/.config/hypr-dock/config.jsonc")
-  -theme string
-    	theme (default "lotos")
-  -help
+-config string
+    config file (default "~/.config/hypr-dock")
+-dev
+    enable developer mode
+-theme string
+    theme dir (default "lotos")
 ```
 #### Все параметры являются необязательными.
 

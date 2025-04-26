@@ -20,14 +20,17 @@ uninstall:
 
 		@echo "Installation removed."
 
+update:
+		sudo rm -f /usr/bin/$(EXECUTABLE)
+		sudo cp $(PROJECT_BIN_DIR)/$(EXECUTABLE) /usr/bin/
+
+		@echo "Updating comleted."
+
 get:
 		go mod tidy
 
 build:
 		go build -v -o bin/hypr-dock ./main/.
-
-run:
-		go run .
 
 exec:
 		./bin/hypr-dock -dev

@@ -14,7 +14,7 @@ https://github.com/user-attachments/assets/50d26918-ac74-4b3b-b384-9dd98c62a799
 - gtk3
 - gtk-layer-shell
 
-### Installation
+### Install
 ```bash
 git clone https://github.com/lotos-linux/hypr-dock.git
 cd hypr-dock
@@ -22,15 +22,32 @@ make get
 make build
 make install
 ```
+
+### Uninstall
+```bash
+make uninstall
+```
+
+### Update
+```bash
+make update
+```
+
+### Local run (dev mode)
+```bash
+make exec
+```
+
 ## Launching
 
 ### Launch Parameters:
 ```text
 -config string
-   config file (default "~/.config/hypr-dock/config.jsonc")
+    config file (default "~/.config/hypr-dock")
+-dev
+    enable developer mode
 -theme string
-   theme (default "lotos")
--help
+    theme dir (default "lotos")
 ```
 #### All parameters are optional.
 
