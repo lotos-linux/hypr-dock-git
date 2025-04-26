@@ -36,10 +36,15 @@ func main() {
 	defer lockFile.Close()
 
 	// window build
-	settings.Init()
+	settings, err := settings.Init()
+	if err != nil {
+		log.Println("Settings init error: ", err)
+	}
+
 	gtk.Init(nil)
 
 	appState := state.New()
+	appState.SetSettings(settings)
 
 	window, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
@@ -49,25 +54,21 @@ func main() {
 
 	window.SetTitle("hypr-dock")
 
-	orientation, edge := layering.SetWindowProperty(window, appState)
-	appState.SetOrientation(orientation)
+	layering.SetWindowProperty(appState)
 
 	err = utils.AddCssProvider(settings.CurrentThemeStylePath)
 	if err != nil {
 		log.Println("CSS file not found, the default GTK theme is running!\n", err)
 	}
 
-	app := app.BuildApp(orientation, appState)
+	app := app.BuildApp(appState)
 
 	window.Add(app)
 	window.Connect("destroy", func() { gtk.MainQuit() })
 	window.ShowAll()
 
 	// post
-	if settings.Get().Layer == "auto" {
-		layering.InitDetectArea(edge, appState)
-	}
-
+	layering.InitDetectArea(appState)
 	hyprEvents.Init(appState)
 
 	// end

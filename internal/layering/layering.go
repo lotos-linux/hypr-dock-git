@@ -1,9 +1,9 @@
 package layering
 
 import (
-	"hypr-dock/internal/settings"
 	"hypr-dock/internal/state"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/dlasky/gotk3-layershell/layershell"
@@ -11,51 +11,79 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-func SetWindowProperty(window *gtk.Window, appState *state.State) (gtk.Orientation, layershell.LayerShellEdgeFlags) {
-	oreintation := gtk.ORIENTATION_HORIZONTAL
-	layer := layershell.LAYER_SHELL_LAYER_BOTTOM
-	edge := layershell.LAYER_SHELL_EDGE_BOTTOM
-
-	switch settings.Get().Position {
-	case "left":
-		edge = layershell.LAYER_SHELL_EDGE_LEFT
-		oreintation = gtk.ORIENTATION_VERTICAL
-	case "bottom":
-		edge = layershell.LAYER_SHELL_EDGE_BOTTOM
-	case "right":
-		edge = layershell.LAYER_SHELL_EDGE_RIGHT
-		oreintation = gtk.ORIENTATION_VERTICAL
-	case "top":
-		edge = layershell.LAYER_SHELL_EDGE_TOP
-	}
+func SetWindowProperty(appState *state.State) {
+	window := appState.GetWindow()
+	settings := appState.GetSettings()
 
 	layershell.InitForWindow(window)
 	layershell.SetNamespace(window, "hypr-dock")
-	layershell.SetAnchor(window, edge, true)
-	layershell.SetMargin(window, edge, 0)
 
-	if settings.Get().Layer == "auto" {
-		SetLayer("bottom", appState)
-		AutoLayer(window, appState)
-		return oreintation, edge
-	}
-
-	switch settings.Get().Layer {
-	case "background":
-		layer = layershell.LAYER_SHELL_LAYER_BACKGROUND
-	case "bottom":
-		layer = layershell.LAYER_SHELL_LAYER_BOTTOM
-	case "top":
-		layer = layershell.LAYER_SHELL_LAYER_TOP
-	case "overlay":
-		layer = layershell.LAYER_SHELL_LAYER_OVERLAY
-	}
-
-	layershell.SetLayer(window, layer)
-	return oreintation, edge
+	ChangePosition(settings.Position, appState)
+	ChangeLayer(settings.Layer, appState)
 }
 
-func InitDetectArea(edge layershell.LayerShellEdgeFlags, appState *state.State) {
+func ChangeLayer(layer string, appState *state.State) {
+	window := appState.GetWindow()
+	if window == nil {
+		return
+	}
+
+	layers := map[string]layershell.LayerShellLayerFlags{
+		"background": layershell.LAYER_SHELL_LAYER_BACKGROUND,
+		"bottom":     layershell.LAYER_SHELL_LAYER_BOTTOM,
+		"top":        layershell.LAYER_SHELL_LAYER_TOP,
+		"overlay":    layershell.LAYER_SHELL_LAYER_OVERLAY,
+	}
+
+	if layer == "auto" {
+		layershell.SetLayer(window, layers["bottom"])
+		InitDetectArea(appState)
+		AutoLayer(appState)
+		return
+	}
+
+	DisableAutoLayer(appState)
+
+	if strings.Contains(layer, "exclusive") {
+		exLayer := strings.Split(layer, "-")[1]
+		layershell.SetLayer(window, layers[exLayer])
+		layershell.AutoExclusiveZoneEnable(window)
+		return
+	}
+
+	layershell.SetLayer(window, layers[layer])
+}
+
+func ChangePosition(position string, appState *state.State) {
+	window := appState.GetWindow()
+	if window == nil {
+		return
+	}
+
+	oreintations := map[string]gtk.Orientation{
+		"bottom": gtk.ORIENTATION_HORIZONTAL,
+		"top":    gtk.ORIENTATION_HORIZONTAL,
+		"left":   gtk.ORIENTATION_VERTICAL,
+		"right":  gtk.ORIENTATION_VERTICAL,
+	}
+
+	edges := map[string]layershell.LayerShellEdgeFlags{
+		"bottom": layershell.LAYER_SHELL_EDGE_BOTTOM,
+		"top":    layershell.LAYER_SHELL_EDGE_TOP,
+		"left":   layershell.LAYER_SHELL_EDGE_LEFT,
+		"right":  layershell.LAYER_SHELL_EDGE_RIGHT,
+	}
+
+	layershell.SetAnchor(window, edges[position], true)
+	layershell.SetMargin(window, edges[position], 0)
+
+	appState.SetOrientation(oreintations[position])
+	appState.SetEdge(edges[position])
+}
+
+func InitDetectArea(appState *state.State) {
+	edge := appState.GetEdge()
+
 	detectArea, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
 		log.Fatal("InitDetectArea(), gtk.WindowNew() | ", err)
@@ -68,7 +96,7 @@ func InitDetectArea(edge layershell.LayerShellEdgeFlags, appState *state.State) 
 	layershell.SetMargin(detectArea, edge, 0)
 	layershell.SetLayer(detectArea, layershell.LAYER_SHELL_LAYER_TOP)
 
-	long := settings.Get().IconSize * len(appState.GetAddedApps().List) * 2
+	long := appState.GetSettings().IconSize * len(appState.GetAddedApps().List) * 2
 
 	switch appState.GetOrientation() {
 	case gtk.ORIENTATION_HORIZONTAL:
@@ -81,7 +109,7 @@ func InitDetectArea(edge layershell.LayerShellEdgeFlags, appState *state.State) 
 		appState.SetPreventHide(false)
 
 		go func() {
-			SetLayer("top", appState)
+			layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_TOP)
 		}()
 	})
 
@@ -89,8 +117,11 @@ func InitDetectArea(edge layershell.LayerShellEdgeFlags, appState *state.State) 
 	appState.SetDetectArea(detectArea)
 }
 
-func AutoLayer(window *gtk.Window, appState *state.State) {
-	window.Connect("enter-notify-event", func(window *gtk.Window, e *gdk.Event) {
+func AutoLayer(appState *state.State) {
+	DisableAutoLayer(appState)
+	window := appState.GetWindow()
+
+	enterSig := window.Connect("enter-notify-event", func(window *gtk.Window, e *gdk.Event) {
 		event := gdk.EventCrossingNewFromEvent(e)
 		isInWindow := event.Detail() == 3 || event.Detail() == 4
 
@@ -100,13 +131,14 @@ func AutoLayer(window *gtk.Window, appState *state.State) {
 
 		if isInWindow && !appState.GetSpecial() {
 			go func() {
-				SetLayer("top", appState)
+				layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_TOP)
 				appState.SetPreventHide(true)
 			}()
 		}
 	})
+	appState.AddSignalHandler("enter", enterSig)
 
-	window.Connect("leave-notify-event", func(window *gtk.Window, e *gdk.Event) {
+	leaveSig := window.Connect("leave-notify-event", func(window *gtk.Window, e *gdk.Event) {
 		event := gdk.EventCrossingNewFromEvent(e)
 		isInWindow := event.Detail() == 3 || event.Detail() == 4
 
@@ -118,20 +150,26 @@ func AutoLayer(window *gtk.Window, appState *state.State) {
 			go func() {
 				time.Sleep(time.Second / 3)
 				if !appState.GetPreventHide() {
-					SetLayer("bottom", appState)
+					layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_BOTTOM)
 					appState.SetPreventHide(false)
 				}
 			}()
 		}
 	})
+	appState.AddSignalHandler("leave", leaveSig)
 }
 
-func SetLayer(layer string, appState *state.State) {
-	window := appState.GetWindow()
-	switch layer {
-	case "top":
-		layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_TOP)
-	case "bottom":
-		layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_BOTTOM)
+func DisableAutoLayer(appState *state.State) {
+	detectArea := appState.GetDetectArea()
+	if detectArea != nil {
+		detectArea.Destroy()
+		appState.SetDetectArea(nil)
 	}
+
+	window := appState.GetWindow()
+
+	appState.RemoveSignalHandler("enter", window)
+	appState.RemoveSignalHandler("leave", window)
+
+	appState.SetPreventHide(false)
 }

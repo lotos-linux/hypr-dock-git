@@ -61,7 +61,7 @@ bind = Super, D, exec, hypr-dock
     // Icon size (px) (default 23)
     "IconSize": 23,
 
-    // Window overlay layer height (auto, background, bottom, top, overlay) (default "auto")
+    // Window overlay layer height (auto, exclusive-top, exclusive-bottom, background, bottom, top, overlay) (default "auto")
     "Layer": "auto",
 
     // Window position on screen (top, bottom, left, right) (default "bottom")
@@ -78,6 +78,9 @@ bind = Super, D, exec, hypr-dock
 ## Разберем неочевидные параметры
 ### Layer
 - При `"Layer": "auto"` слой дока находиться под всеми окнами, но если увести курсор мыши к краю экрана - док поднимается над ними
+- При `"Layer": "exclusive-top"` включается эксклюзивный режим на верхнем слое. Тайлинговые и плавающие окна не будут перекрывать док.
+- При `"Layer": "exclusive-bottom"` включается эксклюзивный режим на нижнем слое. Тайлинговые окна не будут перекрывать док. Плавающие окна будут поверх дока.
+
 ### SystemGapUsed
 - При `"SystemGapUsed": "true"` док будет задавать для себя отступ от края экрана беря значение из конфигурации `hyprland`, а конкретно значения `general:gaps_out`, при этом док динамически будет подхватывать изменение конфигурации `hyprland`
 - При `"SystemGapUsed": "false"` отступ от края экрана будет задаваться параметром `Margin`

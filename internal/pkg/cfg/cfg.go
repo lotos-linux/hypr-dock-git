@@ -2,10 +2,10 @@ package cfg
 
 import (
 	"hypr-dock/internal/pkg/utils"
+	"hypr-dock/internal/pkg/validate"
 	"io"
 	"log"
 	"os"
-	"slices"
 
 	"github.com/akshaybharambe14/go-jsonc"
 	"github.com/goccy/go-json"
@@ -46,7 +46,7 @@ func GetDefaultConfig() Config {
 	}
 }
 
-func ReadConfig(jsoncFile string) Config {
+func ReadConfig(jsoncFile string, themesDir string) Config {
 	// Read jsonc
 	config := Config{}
 	err := ReadJsonc(jsoncFile, &config)
@@ -62,26 +62,19 @@ func ReadConfig(jsoncFile string) Config {
 		log.Println("The theme is not set, the default theme is currently used - \"lotos\"")
 	}
 
-	correctLayers := []string{"auto", "background", "bottom", "top", "overlay"}
-	if !slices.Contains(correctLayers, config.Layer) {
-		log.Println("Layer", "\""+config.Layer+"\"", "is incorrect or empty. Default layer set")
-		config.Layer = GetDefaultConfig().CurrentTheme
+	if !validate.Layer(config.Layer, false) {
+		config.Layer = GetDefaultConfig().Layer
 	}
 
-	correctPositions := []string{"left", "right", "top", "bottom"}
-	if !slices.Contains(correctPositions, config.Position) {
-		log.Println("Position", "\""+config.Layer+"\"", "is incorrect or empty. Default position set")
+	if !validate.Position(config.Position, false) {
 		config.Position = GetDefaultConfig().Position
 	}
 
-	correctBlurModes := []string{"true", "false"}
-	if !slices.Contains(correctBlurModes, config.Blur) {
+	if !validate.Blur(config.Blur, false) {
 		config.Blur = GetDefaultConfig().Blur
 	}
 
-	correctSystemGapUsed := []string{"true", "false"}
-	if !slices.Contains(correctSystemGapUsed, config.SystemGapUsed) {
-		log.Println("SystemGapUsed", "\""+config.SystemGapUsed+"\"", "is incorrect or empty. Defailt value set")
+	if !validate.SystemGapUsed(config.SystemGapUsed, false) {
 		config.SystemGapUsed = GetDefaultConfig().SystemGapUsed
 	}
 
@@ -107,9 +100,7 @@ func ReadTheme(jsoncFile string, config Config) *ThemeConfig {
 	}
 
 	// Set default values ​​if not specified
-	correctBlurModes := []string{"true", "false"}
-	if !slices.Contains(correctBlurModes, themeConfig.Blur) {
-		log.Println("Blur", "\""+themeConfig.Blur+"\"", "is incorrect or empty. Default blur set")
+	if !validate.Blur(config.Blur, false) {
 		themeConfig.Blur = config.Blur
 	}
 

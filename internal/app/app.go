@@ -17,26 +17,29 @@ import (
 	"hypr-dock/pkg/ipc"
 )
 
-func BuildApp(orientation gtk.Orientation, appState *state.State) *gtk.Box {
+func BuildApp(appState *state.State) *gtk.Box {
+	settings := appState.GetSettings()
+	orientation := appState.GetOrientation()
+
 	app, err := gtk.BoxNew(orientation, 0)
 	if err != nil {
 		log.Println("BuildApp() | app | gtk.BoxNew()")
 		log.Fatal(err)
 	}
 
-	addWindowMarginRule(app)
+	addWindowMarginRule(app, appState)
 	app.SetName("app")
 
-	itemsBox, _ := gtk.BoxNew(orientation, settings.Get().Spacing)
+	itemsBox, _ := gtk.BoxNew(orientation, settings.Spacing)
 	itemsBox.SetName("items-box")
 
 	switch orientation {
 	case gtk.ORIENTATION_HORIZONTAL:
-		itemsBox.SetMarginEnd(int(float64(settings.Get().Spacing) * 0.8))
-		itemsBox.SetMarginStart(int(float64(settings.Get().Spacing) * 0.8))
+		itemsBox.SetMarginEnd(int(float64(settings.Spacing) * 0.8))
+		itemsBox.SetMarginStart(int(float64(settings.Spacing) * 0.8))
 	case gtk.ORIENTATION_VERTICAL:
-		itemsBox.SetMarginBottom(int(float64(settings.Get().Spacing) * 0.8))
-		itemsBox.SetMarginTop(int(float64(settings.Get().Spacing) * 0.8))
+		itemsBox.SetMarginBottom(int(float64(settings.Spacing) * 0.8))
+		itemsBox.SetMarginTop(int(float64(settings.Spacing) * 0.8))
 	}
 
 	appState.SetItemsBox(itemsBox)
@@ -49,7 +52,7 @@ func BuildApp(orientation gtk.Orientation, appState *state.State) *gtk.Box {
 func renderItems(appState *state.State) {
 	clients, _ := ipc.GetClients()
 
-	for _, className := range settings.PinnedApps {
+	for _, className := range *appState.GetPinned() {
 		InitNewItemInClass(className, appState)
 	}
 
@@ -60,36 +63,36 @@ func renderItems(appState *state.State) {
 
 func InitNewItemInIPC(ipcClient ipc.Client, appState *state.State) {
 	className := ipcClient.Class
-	if !slices.Contains(settings.PinnedApps, className) && appState.GetAddedApps().List[className] == nil {
+	if !slices.Contains(*appState.GetPinned(), className) && appState.GetAddedApps().List[className] == nil {
 		InitNewItemInClass(className, appState)
 	}
 
-	appState.GetAddedApps().List[className].UpdateState(ipcClient)
+	appState.GetAddedApps().List[className].UpdateState(ipcClient, appState.GetSettings())
 	appState.GetWindow().ShowAll()
 }
 
 func InitNewItemInClass(className string, appState *state.State) {
-	item, err := item.New(className)
+	item, err := item.New(className, appState.GetSettings())
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	appItemEventHandler(item)
+	appItemEventHandler(item, appState.GetSettings())
 
 	item.List = appState.GetAddedApps().List
-	item.PinnedList = &settings.PinnedApps
+	item.PinnedList = appState.GetPinned()
 	appState.GetAddedApps().Add(className, item)
 
 	appState.GetItemsBox().Add(item.ButtonBox)
 	appState.GetWindow().ShowAll()
 }
 
-func appItemEventHandler(item *item.Item) {
+func appItemEventHandler(item *item.Item, settings settings.Settings) {
 	item.Button.Connect("button-release-event", func(button *gtk.Button, e *gdk.Event) {
 		event := gdk.EventButtonNewFromEvent(e)
 		if event.Button() == 3 {
-			menu, err := item.ContextMenu()
+			menu, err := item.ContextMenu(settings)
 			if err != nil {
 				log.Println(err)
 				return
@@ -126,12 +129,12 @@ func RemoveApp(address string, appState *state.State) {
 	}
 
 	className := item.ClassName
-	if item.Instances == 1 && !slices.Contains(settings.PinnedApps, className) {
+	if item.Instances == 1 && !slices.Contains(*appState.GetPinned(), className) {
 		item.Remove()
 		return
 	}
 
-	item.RemoveLastInstance(windowIndex)
+	item.RemoveLastInstance(windowIndex, appState.GetSettings())
 
 	appState.GetWindow().ShowAll()
 }
@@ -159,16 +162,17 @@ func ChangeWindowTitle(address string, title string, appState *state.State) {
 	}
 }
 
-func addWindowMarginRule(app *gtk.Box) {
-	position := settings.Get().Position
+func addWindowMarginRule(app *gtk.Box, appState *state.State) {
+	settings := appState.GetSettings()
+	position := settings.Position
 	var marginProvider *gtk.CssProvider
 
-	switch settings.Get().SystemGapUsed {
+	switch settings.SystemGapUsed {
 	case "true":
 		margin, err := hyprOpt.GetGap()
 		if err != nil {
 			log.Println(err, "\nSet margin in config")
-			applyWindowMarginCSS(app, position, settings.Get().Margin)
+			applyWindowMarginCSS(app, position, settings.Margin)
 		}
 
 		marginProvider = applyWindowMarginCSS(app, position, margin[0])
@@ -179,7 +183,7 @@ func addWindowMarginRule(app *gtk.Box) {
 			log.Println("Window margins updated successfully: ", gap)
 		})
 	case "false":
-		applyWindowMarginCSS(app, position, settings.Get().Margin)
+		applyWindowMarginCSS(app, position, settings.Margin)
 	}
 }
 

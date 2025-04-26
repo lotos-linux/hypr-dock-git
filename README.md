@@ -54,7 +54,7 @@ bind = Super, D, exec, hypr-dock
     // Icon size (px) (default 23)
     "IconSize": 23,
 
-    // Window overlay layer height (auto, background, bottom, top, overlay) (default "auto")
+    // Window overlay layer height (auto, exclusive-top, exclusive-bottom, background, bottom, top, overlay) (default "auto")
     "Layer": "auto",
 
     // Window position on screen (top, bottom, left, right) (default "bottom")
@@ -72,6 +72,8 @@ bind = Super, D, exec, hypr-dock
 ## Explanation of Non-Obvious Parameters
 ### Layer
 - With `"Layer": "auto"` the dock layer is below all windows, but if you move the mouse cursor to the edge of the screen, the dock rises above them.
+- With `"Layer": "exclusive-top"` - exclusive mode is enabled on the top layer. Neither tiled nor floating windows will overlap the dock.
+- With `"Layer": "exclusive-bottom"` - exclusive mode is enabled on the bottom layer. Tiled windows won't overlap the dock. Floating windows will appear above the dock.
 ### SystemGapUsed
 - With `"SystemGapUsed": "true"` the dock will set its margin from the edge of the screen based on the hyprland configuration, specifically the `general:gaps_out` value. The dock will dynamically adapt to changes in the hyprland configuration.
 - With `"SystemGapUsed": "false"` the margin from the edge of the screen will be set by the `Margin` parameter.

@@ -30,4 +30,4 @@ run:
 		go run .
 
 exec:
-		./bin/hypr-dock
+		./bin/hypr-dock -dev

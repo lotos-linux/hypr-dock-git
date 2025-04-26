@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"errors"
 	"hypr-dock/internal/pkg/cfg"
 	"hypr-dock/internal/pkg/flags"
 	"hypr-dock/internal/pkg/utils"
@@ -9,26 +8,76 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
-const RunMode = "normal"
+type Settings struct {
+	cfg.Config
+	ConfigDir              string
+	ConfigPath             string
+	PinnedPath             string
+	ThemesDir              string
+	CurrentThemeDir        string
+	CurrentThemeConfigPath string
+	CurrentThemeStylePath  string
+	PinnedApps             []string
+}
 
-// const RunMode = "dev"
-const DefaultTheme = "lotos"
+func Init() (Settings, error) {
+	const DefaultTheme = "lotos"
 
-var ConfigDir string
-var ConfigPath string
-var PinnedPath string
-var ThemesDir string
-var CurrentThemeDir string
-var CurrentThemeConfigPath string
-var CurrentThemeStylePath string
+	var settings Settings
 
-var conf cfg.Config
-var PinnedApps []string
+	flags := flags.Get(DefaultTheme)
 
-func Get() cfg.Config {
-	return conf
+	if flags.DevMode {
+		settings.ConfigDir = setConfigDir("dev")
+	} else {
+		settings.ConfigDir = setConfigDir("normal")
+	}
+
+	settings.PinnedPath = filepath.Join(settings.ConfigDir, "pinned.json")
+	settings.PinnedApps = cfg.ReadItemList(settings.PinnedPath)
+	defaultConfigPath := filepath.Join(settings.ConfigDir, "config.jsonc")
+
+	if flags.Config == "~/.config/hypr-dock" {
+		settings.ConfigPath = defaultConfigPath
+	} else {
+		settings.ConfigPath = expandPath(flags.Config)
+	}
+
+	settings.Config = cfg.ReadConfig(settings.ConfigPath, settings.ThemesDir)
+
+	settings.ThemesDir = filepath.Join(settings.ConfigDir, "themes")
+	settings.CurrentThemeDir = filepath.Join(settings.ThemesDir, settings.CurrentTheme)
+
+	if !utils.FileExists(settings.CurrentThemeDir) {
+		log.Println("Current theme not found (", settings.CurrentTheme, "). Loading default theme")
+
+		if settings.CurrentTheme == DefaultTheme {
+			log.Println("Default theme not found")
+		}
+
+		settings.CurrentTheme = DefaultTheme
+	}
+
+	settings.CurrentThemeStylePath = filepath.Join(settings.CurrentThemeDir, "style.css")
+	settings.CurrentThemeConfigPath = filepath.Join(settings.CurrentThemeDir, settings.CurrentTheme+".jsonc")
+
+	themeConfig := cfg.ReadTheme(settings.CurrentThemeConfigPath, settings.Config)
+	if themeConfig != nil {
+		settings.Blur = themeConfig.Blur
+		settings.Spacing = themeConfig.Spacing
+	}
+
+	if settings.Blur == "true" {
+		enableBlur()
+		ipc.AddEventListener("configreloaded", func(event string) {
+			go enableBlur()
+		}, true)
+	}
+
+	return settings, nil
 }
 
 func setConfigDir(mode string) string {
@@ -37,69 +86,30 @@ func setConfigDir(mode string) string {
 		log.Fatal("Home dir: " + err.Error())
 	}
 
-	runModes := map[string]func() string{}
-	runModes["normal"] = func() string {
-		return filepath.Join(homeDir, ".config/hypr-dock")
-	}
-	runModes["dev"] = func() string {
-		return filepath.Join(homeDir, "repos/hypr-dock/configs")
+	exePath, err := os.Executable()
+	if err != nil {
+		log.Fatal("Exe dir: " + err.Error())
 	}
 
+	exeDir := filepath.Dir(exePath)
+
+	runModes := map[string]func() string{
+		"normal": func() string {
+			return filepath.Join(homeDir, ".config/hypr-dock")
+		},
+		"dev": func() string {
+			return filepath.Join(filepath.Dir(exeDir), "configs")
+		},
+	}
 	return runModes[mode]()
 }
 
-func Init() error {
-	flags := flags.Get(DefaultTheme)
-
-	ConfigDir = setConfigDir(RunMode)
-
-	PinnedPath = filepath.Join(ConfigDir, "pinned.json")
-	PinnedApps = cfg.ReadItemList(PinnedPath)
-	defaultConfigPath := filepath.Join(ConfigDir, "config.jsonc")
-
-	if flags.Config == "~/.config/hypr-dock" {
-		ConfigPath = defaultConfigPath
-	} else {
-		ConfigPath = flags.Config
+func expandPath(path string) string {
+	if strings.HasPrefix(path, "~/") {
+		home, _ := os.UserHomeDir()
+		return filepath.Join(home, path[2:])
 	}
-
-	conf = cfg.ReadConfig(ConfigPath)
-
-	ThemesDir = filepath.Join(ConfigDir, "themes")
-	CurrentThemeDir = filepath.Join(ThemesDir, conf.CurrentTheme)
-
-	if !utils.FileExists(CurrentThemeDir) {
-		log.Println("Current theme not found (", conf.CurrentTheme, "). Loading default theme")
-
-		if conf.CurrentTheme == DefaultTheme {
-			log.Println("Default theme not found")
-			return errors.New("default theme not found")
-		}
-
-		conf.CurrentTheme = DefaultTheme
-	}
-
-	CurrentThemeStylePath = filepath.Join(CurrentThemeDir, "style.css")
-	CurrentThemeConfigPath = filepath.Join(CurrentThemeDir, conf.CurrentTheme+".jsonc")
-
-	themeConfig := cfg.ReadTheme(CurrentThemeConfigPath, conf)
-	if themeConfig == nil {
-		log.Println(CurrentThemeConfigPath, "not found. Load default values")
-		return nil
-	}
-
-	conf.Blur = themeConfig.Blur
-	conf.Spacing = themeConfig.Spacing
-
-	if conf.Blur == "true" {
-		enableBlur()
-
-		ipc.AddEventListener("configreloaded", func(event string) {
-			go enableBlur()
-		}, true)
-	}
-
-	return nil
+	return path
 }
 
 func enableBlur() {

@@ -1,5 +1,5 @@
 #app.gtx
-'''gtx
+```tsx
 package main
 
 import "user"
@@ -13,10 +13,10 @@ func Render() gtk.Widget {
         }}
     </Box>
 }
-'''
+```
 
 #user.gtx
-'''gtx
+```tsx
 package user
 
 type Props struct {
@@ -28,4 +28,4 @@ func Render(props Props) gtk.Widget {
         <Label label={props.Name} />
     </Box>
 }
-'''
+```

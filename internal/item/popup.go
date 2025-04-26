@@ -7,6 +7,7 @@ import (
 
 	"hypr-dock/internal/pkg/desktop"
 	"hypr-dock/internal/pkg/utils"
+	"hypr-dock/internal/settings"
 	"hypr-dock/pkg/ipc"
 )
 
@@ -26,7 +27,7 @@ func (item *Item) WindowsMenu() (*gtk.Menu, error) {
 	return menu, nil
 }
 
-func (item *Item) ContextMenu() (*gtk.Menu, error) {
+func (item *Item) ContextMenu(settings settings.Settings) (*gtk.Menu, error) {
 	menu, err := gtk.MenuNew()
 	if err != nil {
 		log.Println(err)
@@ -52,7 +53,7 @@ func (item *Item) ContextMenu() (*gtk.Menu, error) {
 		log.Println(err)
 	}
 
-	pinMenuItem, err := BuildPinMenuItem(item)
+	pinMenuItem, err := BuildPinMenuItem(item, settings)
 	if err == nil {
 		menu.Append(pinMenuItem)
 	} else {
@@ -97,14 +98,14 @@ func BuildLaunchMenuItem(item *Item, exec string) (*gtk.MenuItem, error) {
 	return launchMenuItem, nil
 }
 
-func BuildPinMenuItem(item *Item) (*gtk.MenuItem, error) {
+func BuildPinMenuItem(item *Item, settings settings.Settings) (*gtk.MenuItem, error) {
 	labelText := "Pin"
 	if item.IsPinned() {
 		labelText = "Unpin"
 	}
 
 	menuItem, err := BuildContextItem(labelText, func() {
-		item.TogglePin()
+		item.TogglePin(settings)
 	})
 
 	if err != nil {

@@ -11,6 +11,7 @@ import (
 	"hypr-dock/internal/pkg/desktop"
 	"hypr-dock/internal/pkg/utils"
 	"hypr-dock/internal/settings"
+
 	"hypr-dock/pkg/ipc"
 )
 
@@ -26,8 +27,7 @@ type Item struct {
 	PinnedList     *[]string
 }
 
-func New(className string) (*Item, error) {
-	config := settings.Get()
+func New(className string, settings settings.Settings) (*Item, error) {
 	desktopData := desktop.New(className)
 
 	item, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
@@ -37,7 +37,7 @@ func New(className string) (*Item, error) {
 
 	button, err := gtk.ButtonNew()
 	if err == nil {
-		image, err := utils.CreateImage(desktopData.Icon, config.IconSize)
+		image, err := utils.CreateImage(desktopData.Icon, settings.IconSize)
 		if err == nil {
 			button.SetImage(image)
 		} else {
@@ -52,7 +52,7 @@ func New(className string) (*Item, error) {
 		log.Println(err)
 	}
 
-	indicatorImage, err := GetIndicatorImage(0)
+	indicatorImage, err := GetIndicatorImage(0, settings)
 	if err == nil {
 		item.Add(indicatorImage)
 	} else {
@@ -71,10 +71,10 @@ func New(className string) (*Item, error) {
 	}, nil
 }
 
-func (item *Item) RemoveLastInstance(windowIndex int) {
+func (item *Item) RemoveLastInstance(windowIndex int, settings settings.Settings) {
 	item.IndicatorImage.Destroy()
 
-	newImage, err := GetIndicatorImage(item.Instances - 1)
+	newImage, err := GetIndicatorImage(item.Instances-1, settings)
 	if err == nil {
 		item.ButtonBox.Add(newImage)
 	}
@@ -84,7 +84,7 @@ func (item *Item) RemoveLastInstance(windowIndex int) {
 	item.IndicatorImage = newImage
 }
 
-func (item *Item) UpdateState(ipcClient ipc.Client) {
+func (item *Item) UpdateState(ipcClient ipc.Client, settings settings.Settings) {
 	appWindow := map[string]string{
 		"Address": ipcClient.Address,
 		"Title":   ipcClient.Title,
@@ -94,7 +94,7 @@ func (item *Item) UpdateState(ipcClient ipc.Client) {
 		item.IndicatorImage.Destroy()
 	}
 
-	indicatorImage, err := GetIndicatorImage(item.Instances + 1)
+	indicatorImage, err := GetIndicatorImage(item.Instances+1, settings)
 	if err == nil {
 		item.ButtonBox.Add(indicatorImage)
 	}
@@ -108,7 +108,8 @@ func (item *Item) IsPinned() bool {
 	return slices.Contains(*item.PinnedList, item.ClassName)
 }
 
-func (item *Item) TogglePin() {
+func (item *Item) TogglePin(settings settings.Settings) {
+
 	if item.IsPinned() {
 		utils.RemoveFromSliceByValue(item.PinnedList, item.ClassName)
 		if item.Instances == 0 {
@@ -134,7 +135,8 @@ func (item *Item) Remove() {
 	delete(item.List, item.ClassName)
 }
 
-func GetIndicatorImage(instances int) (*gtk.Image, error) {
+func GetIndicatorImage(instances int, settings settings.Settings) (*gtk.Image, error) {
+
 	var path string
 	indicatorPath := filepath.Join(settings.CurrentThemeDir, "point")
 
@@ -149,5 +151,5 @@ func GetIndicatorImage(instances int) (*gtk.Image, error) {
 		path = filepath.Join(indicatorPath, "3.svg")
 	}
 
-	return utils.CreateImageWidthScale(path, settings.Get().IconSize, 0.56)
+	return utils.CreateImageWidthScale(path, settings.IconSize, 0.56)
 }

@@ -2,20 +2,26 @@ package state
 
 import (
 	"hypr-dock/internal/item"
+	"hypr-dock/internal/settings"
 	"sync"
 
+	"github.com/dlasky/gotk3-layershell/layershell"
+	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 )
 
 type State struct {
-	Window      *gtk.Window
-	DetectArea  *gtk.Window
-	ItemsBox    *gtk.Box
-	Orientation gtk.Orientation
-	PreventHide bool
-	AddedApps   AddedApps
-	Special     bool
-	mu          sync.Mutex
+	Settings       settings.Settings
+	Window         *gtk.Window
+	SignalHandlers map[string]glib.SignalHandle
+	DetectArea     *gtk.Window
+	ItemsBox       *gtk.Box
+	Orientation    gtk.Orientation
+	Edge           layershell.LayerShellEdgeFlags
+	PreventHide    bool
+	AddedApps      AddedApps
+	Special        bool
+	mu             sync.Mutex
 }
 
 type AddedApps struct {
@@ -33,6 +39,56 @@ func NewAddedApps() AddedApps {
 	return AddedApps{
 		List: make(map[string]*item.Item),
 	}
+}
+
+func (s *State) AddSignalHandler(name string, id glib.SignalHandle) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.SignalHandlers == nil {
+		s.SignalHandlers = make(map[string]glib.SignalHandle)
+	}
+	s.SignalHandlers[name] = id
+}
+
+func (s *State) RemoveSignalHandler(name string, window *gtk.Window) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if id, exists := s.SignalHandlers[name]; exists {
+		window.HandlerDisconnect(id)
+		delete(s.SignalHandlers, name)
+	}
+}
+
+func (s *State) SetEdge(edge layershell.LayerShellEdgeFlags) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Edge = edge
+}
+
+func (s *State) GetEdge() layershell.LayerShellEdgeFlags {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.Edge
+}
+
+func (s *State) SetSettings(settings settings.Settings) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Settings = settings
+}
+
+func (s *State) GetSettings() settings.Settings {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.Settings
+}
+
+func (s *State) GetPinned() *[]string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return &s.Settings.PinnedApps
 }
 
 func (s *State) GetAddedApps() *AddedApps {

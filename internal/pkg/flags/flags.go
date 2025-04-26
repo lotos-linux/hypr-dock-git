@@ -1,17 +1,27 @@
 package flags
 
-import "flag"
+import (
+	"flag"
+	"os"
+)
 
 type Flags struct {
-	Config string
-	Theme  string
+	DevMode bool
+	Config  string
+	Theme   string
 }
 
 func Get(defaultTheme string) Flags {
-	list := Flags{
-		Config: *flag.String("config", "~/.config/hypr-dock", "config file"),
-		Theme:  *flag.String("theme", defaultTheme, "theme dir"),
-	}
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
+	dev := flag.Bool("dev", false, "enable developer mode")
+	config := flag.String("config", "~/.config/hypr-dock", "config file")
+	theme := flag.String("theme", defaultTheme, "theme dir")
 	flag.Parse()
-	return list
+
+	return Flags{
+		DevMode: *dev,
+		Config:  *config,
+		Theme:   *theme,
+	}
 }
