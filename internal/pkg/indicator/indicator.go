@@ -15,33 +15,41 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
+// IndicatorFile represents an indicator image file
 type IndicatorFile struct {
-	Number    int
-	Extension string
-	FullName  string
+	Number    int    // Numeric prefix of the file (e.g. 0 from "0.svg")
+	Extension string // File extension including dot (e.g. ".svg")
+	FullName  string // Complete filename (e.g. "0.svg")
 }
 
+// New creates a new indicator image based on instances count
 func New(instances int, settings settings.Settings) (*gtk.Image, error) {
 	available, err := GetAvailable(settings)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get indicators: %w", err)
 	}
 	if len(available) < 2 {
-		return nil, errors.New("need at least 2 indicator files (0.svg and 1.svg)")
+		return nil, errors.New("at least 2 indicator files required (0.* and 1.*)")
 	}
 
-	selected := available[0]
-	for _, file := range available {
+	selected := selectIndicatorFile(instances, available)
+	path := filepath.Join(settings.CurrentThemeDir, "point", selected.FullName)
+	return utils.CreateImageWidthScale(path, settings.IconSize, 0.56)
+}
+
+// selectIndicatorFile chooses the appropriate indicator file based on instances count
+func selectIndicatorFile(instances int, files []IndicatorFile) IndicatorFile {
+	selected := files[0]
+	for _, file := range files {
 		if file.Number > instances {
 			break
 		}
 		selected = file
 	}
-
-	path := filepath.Join(settings.CurrentThemeDir, "point", selected.FullName)
-	return utils.CreateImageWidthScale(path, settings.IconSize, 0.56)
+	return selected
 }
 
+// GetAvailable returns all valid indicator files sorted by their numeric value
 func GetAvailable(settings settings.Settings) ([]IndicatorFile, error) {
 	dirPath := filepath.Join(settings.CurrentThemeDir, "point")
 
@@ -60,19 +68,9 @@ func GetAvailable(settings settings.Settings) ([]IndicatorFile, error) {
 			continue
 		}
 
-		name := entry.Name()
-		ext := strings.ToLower(filepath.Ext(name))
-		if !isSupportExt(ext) {
-			continue
-		}
-
-		baseName := name[:len(name)-len(ext)]
-		if num, err := strconv.Atoi(baseName); err == nil {
-			files = append(files, IndicatorFile{
-				Number:    num,
-				Extension: ext,
-				FullName:  name,
-			})
+		file, ok := parseIndicatorFile(entry.Name())
+		if ok {
+			files = append(files, file)
 		}
 	}
 
@@ -83,7 +81,28 @@ func GetAvailable(settings settings.Settings) ([]IndicatorFile, error) {
 	return files, nil
 }
 
-func isSupportExt(ext string) bool {
-	supportList := []string{".svg", ".jpg", ".png"}
-	return slices.Contains(supportList, ext)
+// parseIndicatorFile attempts to parse a filename into an IndicatorFile
+func parseIndicatorFile(name string) (IndicatorFile, bool) {
+	ext := strings.ToLower(filepath.Ext(name))
+	if !isSupportedExtension(ext) {
+		return IndicatorFile{}, false
+	}
+
+	baseName := name[:len(name)-len(ext)]
+	num, err := strconv.Atoi(baseName)
+	if err != nil {
+		return IndicatorFile{}, false
+	}
+
+	return IndicatorFile{
+		Number:    num,
+		Extension: ext,
+		FullName:  name,
+	}, true
+}
+
+// isSupportedExtension checks if the extension is valid for indicator files
+func isSupportedExtension(ext string) bool {
+	supported := []string{".svg", ".jpg", ".png", ".webp"}
+	return slices.Contains(supported, ext)
 }
