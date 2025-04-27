@@ -37,11 +37,12 @@ func ChangeLayer(layer string, appState *state.State) {
 
 	if layer == "auto" {
 		layershell.SetLayer(window, layers["bottom"])
-		InitDetectArea(appState)
 		AutoLayer(appState)
+		InitDetectArea(appState)
 		return
 	}
 
+	log.Println("46| DisableAutoLayer()")
 	DisableAutoLayer(appState)
 
 	if strings.Contains(layer, "exclusive") {
@@ -83,6 +84,7 @@ func ChangePosition(position string, appState *state.State) {
 
 func InitDetectArea(appState *state.State) {
 	edge := appState.GetEdge()
+	window := appState.GetWindow()
 
 	detectArea, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
@@ -105,7 +107,7 @@ func InitDetectArea(appState *state.State) {
 		detectArea.SetSizeRequest(1, long)
 	}
 
-	detectArea.Connect("enter-notify-event", func(window *gtk.Window, e *gdk.Event) {
+	detectArea.Connect("enter-notify-event", func(detectWindow *gtk.Window, e *gdk.Event) {
 		appState.SetPreventHide(false)
 
 		go func() {
