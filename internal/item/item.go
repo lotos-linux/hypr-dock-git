@@ -2,13 +2,13 @@ package item
 
 import (
 	"log"
-	"path/filepath"
 	"slices"
 
 	"github.com/gotk3/gotk3/gtk"
 
 	"hypr-dock/internal/pkg/cfg"
 	"hypr-dock/internal/pkg/desktop"
+	"hypr-dock/internal/pkg/indicator"
 	"hypr-dock/internal/pkg/utils"
 	"hypr-dock/internal/settings"
 
@@ -52,7 +52,7 @@ func New(className string, settings settings.Settings) (*Item, error) {
 		log.Println(err)
 	}
 
-	indicatorImage, err := GetIndicatorImage(0, settings)
+	indicatorImage, err := indicator.New(0, settings)
 	if err == nil {
 		item.Add(indicatorImage)
 	} else {
@@ -74,7 +74,7 @@ func New(className string, settings settings.Settings) (*Item, error) {
 func (item *Item) RemoveLastInstance(windowIndex int, settings settings.Settings) {
 	item.IndicatorImage.Destroy()
 
-	newImage, err := GetIndicatorImage(item.Instances-1, settings)
+	newImage, err := indicator.New(item.Instances+1, settings)
 	if err == nil {
 		item.ButtonBox.Add(newImage)
 	}
@@ -94,7 +94,7 @@ func (item *Item) UpdateState(ipcClient ipc.Client, settings settings.Settings) 
 		item.IndicatorImage.Destroy()
 	}
 
-	indicatorImage, err := GetIndicatorImage(item.Instances+1, settings)
+	indicatorImage, err := indicator.New(item.Instances+1, settings)
 	if err == nil {
 		item.ButtonBox.Add(indicatorImage)
 	}
@@ -133,23 +133,4 @@ func (item *Item) TogglePin(settings settings.Settings) {
 func (item *Item) Remove() {
 	item.ButtonBox.Destroy()
 	delete(item.List, item.ClassName)
-}
-
-func GetIndicatorImage(instances int, settings settings.Settings) (*gtk.Image, error) {
-
-	var path string
-	indicatorPath := filepath.Join(settings.CurrentThemeDir, "point")
-
-	switch {
-	case instances == 0:
-		path = filepath.Join(indicatorPath, "0.svg")
-	case instances == 1:
-		path = filepath.Join(indicatorPath, "1.svg")
-	case instances == 2:
-		path = filepath.Join(indicatorPath, "2.svg")
-	case instances > 2:
-		path = filepath.Join(indicatorPath, "3.svg")
-	}
-
-	return utils.CreateImageWidthScale(path, settings.IconSize, 0.56)
 }
