@@ -29,7 +29,10 @@ func New(instances int, settings settings.Settings) (*gtk.Image, error) {
 		return nil, fmt.Errorf("failed to get indicators: %w", err)
 	}
 	if len(available) < 2 {
-		return nil, errors.New("at least 2 indicator files required (0.* and 1.*)")
+		return nil, errors.New("at least 2 indicator files required (0.* and *.*)")
+	}
+	if available[0].Number != 0 {
+		return nil, errors.New("at least 2 indicator files required (0.* and *.*)")
 	}
 
 	selected := selectIndicatorFile(instances, available)
