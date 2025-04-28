@@ -63,16 +63,18 @@ func renderItems(appState *state.State) {
 }
 
 func InitNewItemInIPC(ipcClient ipc.Client, appState *state.State) {
+	list := appState.GetList()
 	className := ipcClient.Class
-	if !slices.Contains(*appState.GetPinned(), className) && appState.GetAddedApps().List[className] == nil {
+	if !slices.Contains(*appState.GetPinned(), className) && list.Get(className) == nil {
 		InitNewItemInClass(className, appState)
 	}
 
-	appState.GetAddedApps().List[className].UpdateState(ipcClient, appState.GetSettings())
+	list.Get(className).UpdateState(ipcClient, appState.GetSettings())
 	appState.GetWindow().ShowAll()
 }
 
 func InitNewItemInClass(className string, appState *state.State) {
+	list := appState.GetList()
 	item, err := item.New(className, appState.GetSettings())
 	if err != nil {
 		log.Println(err)
@@ -81,9 +83,9 @@ func InitNewItemInClass(className string, appState *state.State) {
 
 	appItemEventHandler(item, appState.GetSettings(), appState)
 
-	item.List = appState.GetAddedApps().List
+	item.List = list.GetMap()
 	item.PinnedList = appState.GetPinned()
-	appState.GetAddedApps().Add(className, item)
+	list.Add(className, item)
 
 	appState.GetItemsBox().Add(item.ButtonBox)
 	appState.GetWindow().ShowAll()
@@ -93,13 +95,16 @@ func appItemEventHandler(item *item.Item, settings settings.Settings, appState *
 	item.Button.Connect("button-release-event", func(button *gtk.Button, e *gdk.Event) {
 		event := gdk.EventButtonNewFromEvent(e)
 		if event.Button() == 3 {
-			menu, err := item.ContextMenu(settings, func() { dispather(appState, item.Button) })
+			menu, err := item.ContextMenu(settings)
 			if err != nil {
 				log.Println(err)
 				return
 			}
 
 			menu.PopupAtWidget(item.Button, gdk.GDK_GRAVITY_NORTH, gdk.GDK_GRAVITY_SOUTH, nil)
+			menu.Connect("deactivate", func() {
+				dispather(appState, item.Button)
+			})
 
 			return
 		}
@@ -111,13 +116,16 @@ func appItemEventHandler(item *item.Item, settings settings.Settings, appState *
 			ipc.Hyprctl("dispatch focuswindow address:" + item.Windows[0]["Address"])
 		}
 		if item.Instances > 1 {
-			menu, err := item.WindowsMenu(func() { dispather(appState, item.Button) })
+			menu, err := item.WindowsMenu()
 			if err != nil {
 				log.Println(err)
 				return
 			}
 
 			menu.PopupAtWidget(item.Button, gdk.GDK_GRAVITY_NORTH, gdk.GDK_GRAVITY_SOUTH, nil)
+			menu.Connect("deactivate", func() {
+				dispather(appState, item.Button)
+			})
 		}
 	})
 }
@@ -147,7 +155,7 @@ func RemoveApp(address string, appState *state.State) {
 }
 
 func searhByAddress(address string, appState *state.State) (*item.Item, int, error) {
-	for _, item := range appState.GetAddedApps().List {
+	for _, item := range appState.GetList().GetMap() {
 		for windowIndex, window := range item.Windows {
 			if window["Address"] == address {
 				return item, windowIndex, nil
@@ -160,7 +168,7 @@ func searhByAddress(address string, appState *state.State) (*item.Item, int, err
 }
 
 func ChangeWindowTitle(address string, title string, appState *state.State) {
-	for _, data := range appState.GetAddedApps().List {
+	for _, data := range appState.GetList().GetMap() {
 		for _, appWindow := range data.Windows {
 			if appWindow["Address"] == address {
 				appWindow["Title"] = title

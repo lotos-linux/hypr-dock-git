@@ -1,7 +1,7 @@
 package state
 
 import (
-	"hypr-dock/internal/item"
+	"hypr-dock/internal/itemsctl"
 	"hypr-dock/internal/settings"
 	"sync"
 
@@ -19,26 +19,22 @@ type State struct {
 	Orientation    gtk.Orientation
 	Edge           layershell.LayerShellEdgeFlags
 	PreventHide    bool
-	AddedApps      AddedApps
+	List           *itemsctl.List
 	Special        bool
 	mu             sync.Mutex
 }
 
-type AddedApps struct {
-	List map[string]*item.Item
-	mu   sync.Mutex
-}
-
 func New() *State {
 	return &State{
-		AddedApps: NewAddedApps(),
+		List: itemsctl.New(),
 	}
 }
 
-func NewAddedApps() AddedApps {
-	return AddedApps{
-		List: make(map[string]*item.Item),
-	}
+func (s *State) GetList() *itemsctl.List {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.List
 }
 
 func (s *State) AddSignalHandler(name string, id glib.SignalHandle) {
@@ -89,24 +85,6 @@ func (s *State) GetPinned() *[]string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return &s.Settings.PinnedApps
-}
-
-func (s *State) GetAddedApps() *AddedApps {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return &s.AddedApps
-}
-
-func (aa *AddedApps) Add(className string, item *item.Item) {
-	aa.mu.Lock()
-	defer aa.mu.Unlock()
-	aa.List[className] = item
-}
-
-func (aa *AddedApps) Remove(className string) {
-	aa.mu.Lock()
-	defer aa.mu.Unlock()
-	delete(aa.List, className)
 }
 
 func (s *State) Update(fn func(*State)) {

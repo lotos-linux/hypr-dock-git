@@ -97,7 +97,7 @@ func InitDetectArea(appState *state.State) {
 	layershell.SetMargin(detectArea, edge, 0)
 	layershell.SetLayer(detectArea, layershell.LAYER_SHELL_LAYER_TOP)
 
-	long := appState.GetSettings().IconSize * len(appState.GetAddedApps().List) * 2
+	long := appState.GetSettings().IconSize * appState.GetList().Len() * 2
 
 	switch appState.GetOrientation() {
 	case gtk.ORIENTATION_HORIZONTAL:
