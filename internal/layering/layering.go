@@ -139,24 +139,33 @@ func AutoLayer(appState *state.State) {
 	appState.AddSignalHandler("enter", enterSig)
 
 	leaveSig := window.Connect("leave-notify-event", func(window *gtk.Window, e *gdk.Event) {
-		event := gdk.EventCrossingNewFromEvent(e)
-		isInWindow := event.Detail() == 3 || event.Detail() == 4
-
-		if isInWindow {
-			appState.SetPreventHide(false)
-		}
-
-		if isInWindow && !appState.GetPreventHide() {
-			go func() {
-				time.Sleep(time.Second / 3)
-				if !appState.GetPreventHide() {
-					layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_BOTTOM)
-					appState.SetPreventHide(false)
-				}
-			}()
-		}
+		DispathLeaveEvent(window, e, appState)
 	})
 	appState.AddSignalHandler("leave", leaveSig)
+}
+
+func DispathLeaveEvent(window *gtk.Window, e *gdk.Event, appState *state.State) {
+	var isInWindow bool
+	if e != nil {
+		event := gdk.EventCrossingNewFromEvent(e)
+		isInWindow = event.Detail() == 3 || event.Detail() == 4
+	} else {
+		isInWindow = true
+	}
+
+	if isInWindow {
+		appState.SetPreventHide(false)
+	}
+
+	if isInWindow && !appState.GetPreventHide() {
+		go func() {
+			time.Sleep(time.Second / 3)
+			if !appState.GetPreventHide() {
+				layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_BOTTOM)
+				appState.SetPreventHide(false)
+			}
+		}()
+	}
 }
 
 func DisableAutoLayer(appState *state.State) {

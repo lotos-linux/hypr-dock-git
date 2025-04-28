@@ -11,7 +11,7 @@ import (
 	"hypr-dock/pkg/ipc"
 )
 
-func (item *Item) WindowsMenu() (*gtk.Menu, error) {
+func (item *Item) WindowsMenu(dispather func()) (*gtk.Menu, error) {
 	menu, err := gtk.MenuNew()
 	if err != nil {
 		log.Println(err)
@@ -19,7 +19,7 @@ func (item *Item) WindowsMenu() (*gtk.Menu, error) {
 
 	desktopData := desktop.New(item.ClassName)
 
-	AddWindowsItemToMenu(menu, item.Windows, desktopData)
+	AddWindowsItemToMenu(menu, item.Windows, desktopData, dispather)
 
 	menu.SetName("windows-menu")
 	menu.ShowAll()
@@ -27,7 +27,7 @@ func (item *Item) WindowsMenu() (*gtk.Menu, error) {
 	return menu, nil
 }
 
-func (item *Item) ContextMenu(settings settings.Settings) (*gtk.Menu, error) {
+func (item *Item) ContextMenu(settings settings.Settings, dispather func()) (*gtk.Menu, error) {
 	menu, err := gtk.MenuNew()
 	if err != nil {
 		log.Println(err)
@@ -35,7 +35,7 @@ func (item *Item) ContextMenu(settings settings.Settings) (*gtk.Menu, error) {
 
 	desktopData := desktop.New(item.ClassName)
 
-	AddWindowsItemToMenu(menu, item.Windows, desktopData)
+	AddWindowsItemToMenu(menu, item.Windows, desktopData, dispather)
 
 	if item.Instances != 0 {
 		separator, err := gtk.SeparatorMenuItemNew()
@@ -46,14 +46,14 @@ func (item *Item) ContextMenu(settings settings.Settings) (*gtk.Menu, error) {
 		}
 	}
 
-	launchMenuItem, err := BuildLaunchMenuItem(item, desktopData.Exec)
+	launchMenuItem, err := BuildLaunchMenuItem(item, desktopData.Exec, dispather)
 	if err == nil {
 		menu.Append(launchMenuItem)
 	} else {
 		log.Println(err)
 	}
 
-	pinMenuItem, err := BuildPinMenuItem(item, settings)
+	pinMenuItem, err := BuildPinMenuItem(item, settings, dispather)
 	if err == nil {
 		menu.Append(pinMenuItem)
 	} else {
@@ -66,11 +66,11 @@ func (item *Item) ContextMenu(settings settings.Settings) (*gtk.Menu, error) {
 	return menu, nil
 }
 
-func AddWindowsItemToMenu(menu *gtk.Menu, windows []map[string]string, desktopData *desktop.Desktop) {
+func AddWindowsItemToMenu(menu *gtk.Menu, windows []map[string]string, desktopData *desktop.Desktop, dispather func()) {
 	for _, window := range windows {
 		menuItem, err := BuildContextItem(window["Title"], func() {
 			go ipc.Hyprctl("dispatch focuswindow address:" + window["Address"])
-		}, desktopData.Icon)
+		}, dispather, desktopData.Icon)
 
 		if err != nil {
 			log.Println(err)
@@ -81,7 +81,7 @@ func AddWindowsItemToMenu(menu *gtk.Menu, windows []map[string]string, desktopDa
 	}
 }
 
-func BuildLaunchMenuItem(item *Item, exec string) (*gtk.MenuItem, error) {
+func BuildLaunchMenuItem(item *Item, exec string, dispather func()) (*gtk.MenuItem, error) {
 	labelText := "New window"
 	if item.Instances == 0 {
 		labelText = "Open"
@@ -89,7 +89,7 @@ func BuildLaunchMenuItem(item *Item, exec string) (*gtk.MenuItem, error) {
 
 	launchMenuItem, err := BuildContextItem(labelText, func() {
 		utils.Launch(exec)
-	})
+	}, dispather)
 
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func BuildLaunchMenuItem(item *Item, exec string) (*gtk.MenuItem, error) {
 	return launchMenuItem, nil
 }
 
-func BuildPinMenuItem(item *Item, settings settings.Settings) (*gtk.MenuItem, error) {
+func BuildPinMenuItem(item *Item, settings settings.Settings, dispather func()) (*gtk.MenuItem, error) {
 	labelText := "Pin"
 	if item.IsPinned() {
 		labelText = "Unpin"
@@ -106,7 +106,7 @@ func BuildPinMenuItem(item *Item, settings settings.Settings) (*gtk.MenuItem, er
 
 	menuItem, err := BuildContextItem(labelText, func() {
 		item.TogglePin(settings)
-	})
+	}, dispather)
 
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func BuildPinMenuItem(item *Item, settings settings.Settings) (*gtk.MenuItem, er
 	return menuItem, nil
 }
 
-func BuildContextItem(labelText string, connectFunc func(), iconName ...string) (*gtk.MenuItem, error) {
+func BuildContextItem(labelText string, connectFunc func(), dispather func(), iconName ...string) (*gtk.MenuItem, error) {
 	menuItem, err := gtk.MenuItemNew()
 	if err != nil {
 		return nil, err
@@ -139,7 +139,10 @@ func BuildContextItem(labelText string, connectFunc func(), iconName ...string) 
 	}
 
 	if connectFunc != nil {
-		menuItem.Connect("activate", connectFunc)
+		menuItem.Connect("activate", func() {
+			dispather()
+			connectFunc()
+		})
 	}
 
 	hbox.Add(label)

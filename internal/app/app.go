@@ -11,6 +11,7 @@ import (
 
 	"hypr-dock/internal/hypr/hyprOpt"
 	"hypr-dock/internal/item"
+	"hypr-dock/internal/layering"
 	"hypr-dock/internal/pkg/utils"
 	"hypr-dock/internal/settings"
 	"hypr-dock/internal/state"
@@ -78,7 +79,7 @@ func InitNewItemInClass(className string, appState *state.State) {
 		return
 	}
 
-	appItemEventHandler(item, appState.GetSettings())
+	appItemEventHandler(item, appState.GetSettings(), appState)
 
 	item.List = appState.GetAddedApps().List
 	item.PinnedList = appState.GetPinned()
@@ -88,11 +89,11 @@ func InitNewItemInClass(className string, appState *state.State) {
 	appState.GetWindow().ShowAll()
 }
 
-func appItemEventHandler(item *item.Item, settings settings.Settings) {
+func appItemEventHandler(item *item.Item, settings settings.Settings, appState *state.State) {
 	item.Button.Connect("button-release-event", func(button *gtk.Button, e *gdk.Event) {
 		event := gdk.EventButtonNewFromEvent(e)
 		if event.Button() == 3 {
-			menu, err := item.ContextMenu(settings)
+			menu, err := item.ContextMenu(settings, func() { dispather(appState, item.Button) })
 			if err != nil {
 				log.Println(err)
 				return
@@ -110,7 +111,7 @@ func appItemEventHandler(item *item.Item, settings settings.Settings) {
 			ipc.Hyprctl("dispatch focuswindow address:" + item.Windows[0]["Address"])
 		}
 		if item.Instances > 1 {
-			menu, err := item.WindowsMenu()
+			menu, err := item.WindowsMenu(func() { dispather(appState, item.Button) })
 			if err != nil {
 				log.Println(err)
 				return
@@ -119,6 +120,12 @@ func appItemEventHandler(item *item.Item, settings settings.Settings) {
 			menu.PopupAtWidget(item.Button, gdk.GDK_GRAVITY_NORTH, gdk.GDK_GRAVITY_SOUTH, nil)
 		}
 	})
+}
+
+func dispather(appState *state.State, btn *gtk.Button) {
+	window := appState.GetWindow()
+	btn.SetStateFlags(gtk.STATE_FLAG_NORMAL, true)
+	layering.DispathLeaveEvent(window, nil, appState)
 }
 
 func RemoveApp(address string, appState *state.State) {
