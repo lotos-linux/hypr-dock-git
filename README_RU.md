@@ -121,7 +121,7 @@ bind = Super, D, exec, hypr-dock
 ### Тема состоит из
 - `[название_темы].jsonc` например `lotos.jsonc`
 - `style.css`
-- Папка с `svg` файлами для индикации количества запущенных приложения
+- Папка с `svg` файлами для индикации количества запущенных приложения (смотрите [themes_RU.md](https://github.com/lotos-linux/hypr-dock/blob/main/docs/customize/themes_RU.md))
 
 ### В конфиге темы всего два параметра
 ```jsonc

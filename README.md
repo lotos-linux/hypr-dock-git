@@ -119,7 +119,7 @@ You can edit it manually. But why? ¯\_(ツ)_/¯
 ### A theme consists of:
 - `[theme_name].jsonc`, for example `lotos.jsonc`
 - `style.css`
-- A folder with `svg` files for indicating the number of running applications
+- A folder with `svg` files for indicating the number of running applications (more [themes.md](https://github.com/lotos-linux/hypr-dock/blob/main/docs/customize/themes.md))
 
 ### The theme configuration has only two parameters:
 ```jsonc
