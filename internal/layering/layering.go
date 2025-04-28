@@ -37,14 +37,13 @@ func ChangeLayer(layer string, appState *state.State) {
 
 	if layer == "auto" {
 		layershell.SetLayer(window, layers["bottom"])
+		layershell.SetExclusiveZone(window, 0)
 		AutoLayer(appState)
 		InitDetectArea(appState)
 		return
 	}
 
-	log.Println("46| DisableAutoLayer()")
 	DisableAutoLayer(appState)
-
 	if strings.Contains(layer, "exclusive") {
 		exLayer := strings.Split(layer, "-")[1]
 		layershell.SetLayer(window, layers[exLayer])
@@ -109,7 +108,6 @@ func InitDetectArea(appState *state.State) {
 
 	detectArea.Connect("enter-notify-event", func(detectWindow *gtk.Window, e *gdk.Event) {
 		appState.SetPreventHide(false)
-
 		go func() {
 			layershell.SetLayer(window, layershell.LAYER_SHELL_LAYER_TOP)
 		}()
